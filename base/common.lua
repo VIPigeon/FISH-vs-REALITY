@@ -28,3 +28,13 @@ function table.contains(t, element)
     end
     return false
 end
+
+Time = {}
+function Time.tick(timer)
+    local deltaTime = love.timer.getDelta()
+    return math.max(timer - deltaTime, 0.0)
+end
+
+function math.random_float(min, max)
+    return min + math.random() * (max - min)
+end
