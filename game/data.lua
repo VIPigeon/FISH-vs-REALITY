@@ -43,6 +43,13 @@ PLAYER = {
     WATER_BOUNCE = 0.5,
     GROUND_ACCELERATION = 100,
     MAX_VELOCITY = 120,
+
+    JUMP = {
+        MIN_T = 0.1,
+        MAX_T = 2.1,
+        MIN_FORCE = 500,
+        MAX_FORCE = 6000,
+    },
 }
 
 

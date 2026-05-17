@@ -14,8 +14,13 @@ end
 
 
 function Game:restart()
+    math.randomseed(os.time()*1e7)
     self.refs.player, entity = self.entityPool:grab()
-    Entity.addComponent(entity, COMPONENT.PLAYER)
+    local player = Entity.addComponent(entity, COMPONENT.PLAYER)
+    player.jump = {
+        t = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T),
+    }
+
     local hitbox = Entity.addComponent(entity, COMPONENT.HITBOX)
     hitbox.offset_x = 0
     hitbox.offset_y = 0
@@ -71,16 +76,28 @@ function Game:update()
                 e.rigidbody.acceleration.x = 0
                 e.rigidbody.acceleration.y = 0
 
-                if Input.isDown(KEYBINDS.ACTION_LEFT) then
-                    e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.GROUND_ACCELERATION
-                end
+                -- if Input.isJustPressed(KEYBINDS.JUMP) then
+                --     e.rigidbody.acceleration.y = 10000
+                -- end
 
-                if Input.isDown(KEYBINDS.ACTION_RIGHT) then
-                    e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.GROUND_ACCELERATION
-                end
+                local onGround = Physics.is_on_ground(e.position, e.hitbox)
+                if onGround then -- автопрыжок
+                    e.player.jump.t = Time.tick(e.player.jump.t)
+                    if e.player.jump.t == 0 then
+                        local T = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T)
+                        e.player.jump.t = T
+                        local F = math.random_float(PLAYER.JUMP.MIN_FORCE, PLAYER.JUMP.MAX_FORCE)
+                        e.rigidbody.acceleration.y = F
+                    end
+                else -- горизонтальное перемещение только в воздухе
+                    if Input.isDown(KEYBINDS.ACTION_LEFT) then
+                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.GROUND_ACCELERATION
+                    end
 
-                if Input.isJustPressed(KEYBINDS.JUMP) then
-                    e.rigidbody.acceleration.y = 10000
+                    if Input.isDown(KEYBINDS.ACTION_RIGHT) then
+                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.GROUND_ACCELERATION
+                    end
+
                 end
             end
         end
