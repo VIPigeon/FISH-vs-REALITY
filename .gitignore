@@ -1,0 +1,4 @@
+.local/
+
+*.tiled-session
+*.tiled-project

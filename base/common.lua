@@ -1,0 +1,30 @@
+-- Взял из:
+-- https://gist.github.com/tylerneylon/81333721109155b2d244
+--
+-- This functions works well for simple tables. Since it is a
+-- clear, concise function, and since I most often work with
+-- simple tables, this is my favorite version.
+--
+-- There are two aspects this does not handle:
+-- * metatables
+-- * recursive tables
+function table.deepcopy(object)
+    if type(object) ~= 'table' then
+        return object
+    end
+
+    local result = {}
+    for k, v in pairs(object) do
+        result[table.deepcopy(k)] = table.deepcopy(v)
+    end
+    return result
+end
+
+function table.contains(t, element)
+    for _, value in pairs(t) do
+        if value == element then
+            return true
+        end
+    end
+    return false
+end
