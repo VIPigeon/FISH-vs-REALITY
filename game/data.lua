@@ -41,14 +41,15 @@ end
 PLAYER = {
     WATER_ACCELERATION = 180,
     WATER_BOUNCE = 0.5,
+    WALL_BOUNCE = 0.67, -- когда рыба на суше
     GROUND_ACCELERATION = 100,
     MAX_VELOCITY = 120,
 
     JUMP = {
         MIN_T = 0.1,
-        MAX_T = 2.1,
-        MIN_FORCE = 500,
-        MAX_FORCE = 6000,
+        MAX_T = 1.1,
+        MIN_FORCE = 800,
+        MAX_FORCE = 5800,
     },
 }
 

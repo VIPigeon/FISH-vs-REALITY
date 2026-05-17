@@ -81,7 +81,7 @@ function Game:update()
                 -- end
 
                 local onGround = Physics.is_on_ground(e.position, e.hitbox)
-                if onGround then -- автопрыжок
+                if onGround then -- автопрыжок только на земле
                     e.player.jump.t = Time.tick(e.player.jump.t)
                     if e.player.jump.t == 0 then
                         local T = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T)
@@ -106,7 +106,11 @@ function Game:update()
             if Map.isWater(tile) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
+                    if math.abs(e.rigidbody.velocity.x) < 75 then
+                        e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
+                    else
+                        e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
+                    end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -133,7 +137,19 @@ function Game:update()
             else
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    e.rigidbody.velocity.x = 0
+                    -- e.rigidbody.velocity.x = 0                    
+                    if math.abs(e.rigidbody.velocity.x) < 75 then
+                        local v = e.rigidbody.velocity.x
+                        local V = 50
+                        if e.rigidbody.velocity.x > 0 then
+                            v = math.max(v, V)
+                        else
+                            v = math.min(v, -V)
+                        end
+                        e.rigidbody.velocity.x = -1 * v
+                    else
+                        e.rigidbody.velocity.x = -1 * PLAYER.WALL_BOUNCE * e.rigidbody.velocity.x
+                    end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
