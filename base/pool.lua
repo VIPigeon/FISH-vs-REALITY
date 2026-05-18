@@ -16,42 +16,48 @@ function Pool:new(ItemType)
 end
 
 
-function Pool:grab()
+function Pool:put(item)
     local slot = table.remove(self.freeList)
 
     if slot > #self.items then
-        table.insert(self.items, self.ItemType:new())
+        table.insert(self.items, item)
         table.insert(self.generation, 1)
         table.insert(self.used, true)
         table.insert(self.freeList, 1 + #self.items)
     end
 
     self.used[slot] = true
-    self.items[slot] = self.ItemType:new()
+    self.items[slot] = item
 
-    return {slot, self.generation[slot]}, self.items[slot]
+    return {index = slot, generation = self.generation[slot]}
 end
 
 
-function Pool:drop(ref)
-    local index = ref.index
-    local generation = ref.generation
+function Pool:get(handle)
+    local index = handle.index
+    local generation = handle.generation
+    if self.used[index] and self.generation[index] == generation then
+        return self.items[index]
+    else
+        error('invalid handle')
+    end
+end
+
+
+function Pool:delete(handle)
+    local index = handle.index
+    local generation = handle.generation
 
     if self.used[index] then
         if self.generation[index] == generation then
             self.used[index] = false
             self.generation[index] = 1 + self.generation[index]
             table.insert(self.freeList, index)
+        else
+            error('invalid handle')
         end
-    end
-end
-
-
-function Pool:get(ref)
-    local index = ref.index
-    local generation = ref.generation
-    if self.used[index] and self.generation[index] == generation then
-        return self.items[index]
+    else
+        error('invalid handle')
     end
 end
 

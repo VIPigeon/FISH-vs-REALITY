@@ -1,13 +1,15 @@
 Game = {}
 
 function Game:init()
-    Screen:init(SCREEN.WIDTH, SCREEN.HEIGHT)
+    -- Находится в Data
+    ASSETS:loadAll()
+
+    Camera:init()
     Input.init()
-    Map.init(love.filesystem.load('content/tilemap/map.lua')())
+    Map.init(ASSETS.tilemap)
 
     self.entityPool = Pool:new(Entity)
-    self.refs = {}
-    self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
+    self.handles = {}
 
     self:restart()
 end
@@ -15,34 +17,75 @@ end
 
 function Game:restart()
     math.randomseed(os.time()*1e7)
-    self.refs.player, entity = self.entityPool:grab()
-    local player = Entity.addComponent(entity, COMPONENT.PLAYER)
-    player.jump = {
-        -- багоопасно. копирование по ссылке. ебануть не должно
-        bucket = PLAYER.JUMP.BUCKET,
-        i = 1,
-        t = 0,
+
+    local player = {
+        position = {
+            x = 40,
+            y = 80,
+        },
+        rectangle = {
+            width = 8,
+            height = 8,
+        },
+        player = {
+            oxygen = 0,
+            jump = {
+                -- багоопасно. копирование по ссылке. ебануть не должно
+                bucket = PLAYER.JUMP.BUCKET,
+                i = 1,
+                t = 0,
+            },
+        },
+        rigidbody = {
+            velocity = {
+                x = 0,
+                y = 0,
+            },
+            acceleration = {
+                x = 0,
+                y = 0,
+            },
+        },
+        hitbox = {
+            offset_x = 0,
+            offset_y = 0,
+            width = 8,
+            height = 8,
+        },
     }
-    table.shuffle(player.jump.bucket)
-    local jump_type = player.jump.bucket[1]
-    player.jump.t = PLAYER.JUMP[jump_type].T
+    local jump_type = player.player.jump.bucket[1]
+    player.player.oxygen = PLAYER.OXYGEN
+    player.player.jump.t = PLAYER.JUMP[jump_type].T
+    table.shuffle(player.player.jump.bucket)
 
-    player.oxygen = PLAYER.OXYGEN
+    local jelly = {
+        position = { x = 40, y = 60 },
+        rigidbody = {
+            velocity = { x = 0, y = 0 },
+            acceleration = { x = 0, y = 0 },
+        },
+        hitbox = {
+            offset_x = 0,
+            offset_y = 0,
+            width = 8,
+            height = 8,
+        },
+        sprite = {
+            animation = 1, -- Индекс текущей анимации
+            animations = {
+                ASSETS.jellyIdleAnimation:clone(),
+                ASSETS.jellyPrepareAnimation:clone(),
+                ASSETS.jellyDashAnimation:clone(),
+            },
+            spritesheet = ASSETS.jellySpritesheet,
+        },
+        jelly = {
+            dashTimer = JELLY.DASH_COOLDOWN,
+        },
+    }
+    self.entityPool:put(jelly)
 
-    local hitbox = Entity.addComponent(entity, COMPONENT.HITBOX)
-    hitbox.offset_x = 0
-    hitbox.offset_y = 0
-    hitbox.width = 8
-    hitbox.height = 8
-    Entity.addComponent(entity, COMPONENT.RIGIDBODY)
-    local position = Entity.addComponent(entity, COMPONENT.POSITION)
-    position.x = 40
-    position.y = 80
-
-    self.getTileQuad = lume.memoize(function(tileId)
-        local x, y, w, h = Map.getTileTextureRegion(tileId)
-        return love.graphics.newQuad(x, y, w, h, self.tilesheet)
-    end)
+    self.handles.player = self.entityPool:put(player)
 end
 
 
@@ -51,7 +94,7 @@ function Game:update()
 
     self.entityPool:foreach(function(e, ref)
         local tile = 0
-        if e.position then
+        if e.position and e.hitbox then
             local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
             local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
             tile = Map.get(Map.worldToTile(centerX, centerY))
@@ -102,7 +145,7 @@ function Game:update()
                     if e.player.jump.t == 0 then
                         -- прыжок
                         local jump_type = e.player.jump.bucket[e.player.jump.i]
-                        e.rigidbody.acceleration.y = PLAYER.JUMP[jump_type].F
+                        e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
 
                         if jump_type == 'high' then
                             table.shuffle(e.player.jump.bucket)
@@ -160,6 +203,12 @@ function Game:update()
                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
                 e.rigidbody.velocity.y = e.rigidbody.velocity.y + e.rigidbody.acceleration.y * deltaTime
             else
+                local vel = e.rigidbody.acceleration.y
+                if not onGround then
+                    vel = vel - GRAVITY
+                end
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y + vel * 0.5 * deltaTime
+
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     -- e.rigidbody.velocity.x = 0                    
@@ -196,11 +245,26 @@ function Game:update()
                 end
 
                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
-                e.rigidbody.velocity.y = e.rigidbody.velocity.y + e.rigidbody.acceleration.y * deltaTime
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y + vel * 0.5 * deltaTime
 
-                if not onGround then
-                    e.rigidbody.velocity.y = e.rigidbody.velocity.y - GRAVITY * deltaTime
+                --if not onGround then
+                --    e.rigidbody.velocity.y = e.rigidbody.velocity.y - GRAVITY * deltaTime
+                --end
+            end
+
+            if e.jelly then
+                if e.rigidbody.velocity.y == 0 then
+                    e.sprite.animation = 1
                 end
+
+                if e.jelly.dashTimer == 0 then
+                    e.sprite.animation = 3
+                    e.rigidbody.velocity.y = JELLY.DASH
+                    e.jelly.dashTimer = JELLY.DASH_COOLDOWN
+                elseif e.jelly.dashTimer < 0.5 then
+                    e.sprite.animation = 2
+                end
+                e.jelly.dashTimer = Time.tick(e.jelly.dashTimer)
             end
         end
 
@@ -215,6 +279,11 @@ function Game:update()
             e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
             e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
         end
+
+        if e.sprite then
+            local animation = e.sprite.animations[e.sprite.animation]
+            animation:update(deltaTime)
+        end
     end)
 end
 
@@ -223,23 +292,53 @@ function Game:draw()
     love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
     love.graphics.setColor(COLOR.WHITE)
 
-    for y = 0, Map.terrain.height - 1 do
-        for x = 0, Map.terrain.width - 1 do
+    local player = Game.entityPool:get(self.handles.player)
+    Camera.x = player.position.x
+    Camera.y = player.position.y
+
+    local left, top = Camera.x - SCREEN.WIDTH / 2, Camera.y - SCREEN.HEIGHT / 2
+    local right, bot = Camera.x + SCREEN.WIDTH / 2, Camera.y + SCREEN.HEIGHT / 2
+
+    left  = math.floor(left / 8) - 1
+    right = math.floor(right / 8) + 1
+    top   = math.floor(top / 8) - 1
+    bot   = math.floor(bot / 8) + 1
+
+    for y = top, bot do
+        for x = left, right do
             local tileId = Map.get(x, y)
             local quad = self.getTileQuad(tileId)
-            love.graphics.draw(self.tilesheet, quad, 8*x, 8*y)
+            local tx, ty = Camera:worldToView(8*x, 8*y)
+            love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
         end
     end
 
     self.entityPool:foreach(function(e, ref)
-        if e.player then
-            print('oxygen: '..e.player.oxygen)
+        if not e.position then
+            return
+        end
+
+        local x, y = Camera:worldToView(e.position.x, e.position.y)
+
+        if e.rectangle then
+            --print('oxygen: '..e.player.oxygen)
             if e.player.oxygen < PLAYER.OXYGEN / 3 then
                 love.graphics.setColor(COLOR.GAMEBOY.DARK)
             else
                 love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
             end
-            love.graphics.rectangle('fill', e.position.x, e.position.y, 8, 8)
+            love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
+        end
+
+        if e.sprite then
+            local animation = e.sprite.animations[e.sprite.animation]
+            animation:draw(e.sprite.spritesheet, x, y)
         end
     end)
 end
+
+
+Game.getTileQuad = lume.memoize(function(tileId)
+    local x, y, w, h = Map.getTileTextureRegion(tileId)
+    return love.graphics.newQuad(x, y, w, h, ASSETS.tilesheet)
+end)

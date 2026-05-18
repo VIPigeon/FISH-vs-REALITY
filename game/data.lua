@@ -52,9 +52,9 @@ PLAYER = {
         -- MIN_FORCE = 800,
         -- MAX_FORCE = 5800,
         -- F — Force 😎
-        short = {T=0, F=1500},
-        middle = {T=0.2, F=2400},
-        high = {T=0.2, F=4400},
+        short = {T=0, F=1500 * 2 * 0.016},
+        middle = {T=0.2, F=2400 * 2 * 0.016},
+        high = {T=0.2, F=4400 * 2 * 0.016},
         BUCKET = {
             'short',
             'short',
@@ -84,6 +84,10 @@ PLAYER = {
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
 }
 
+JELLY = {
+    DASH = 60,
+    DASH_COOLDOWN = 3,
+}
 
 WORLD = {
     WIDTH = 999,
@@ -101,23 +105,15 @@ WORLD = {
 GRAVITY = 200
 
 
-COMPONENT = {
-    POSITION = {
-        x = 0,
-        y = 0,
-    },
-    RIGIDBODY = {
-        velocity = {x = 0, y = 0},
-        acceleration = {x = 0, y = 0},
-    },
-    HITBOX = {
-        offset_x = 0,
-        offset_y = 0,
-        width = 0,
-        height = 0,
-    },
-    PLAYER = {},
-}
-for k, v in pairs(COMPONENT) do
-    COMPONENT[k].name = string.lower(k)
+ASSETS = {}
+
+function ASSETS:loadAll()
+    self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
+    self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
+    self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
+
+    local jellyGrid = anim8.newGrid(8, 16, self.jellySpritesheet:getPixelWidth(), self.jellySpritesheet:getPixelHeight())
+    self.jellyIdleAnimation = anim8.newAnimation(jellyGrid('1-2', 1), 0.5)
+    self.jellyPrepareAnimation = anim8.newAnimation(jellyGrid(3, 1), 1)
+    self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
 end
