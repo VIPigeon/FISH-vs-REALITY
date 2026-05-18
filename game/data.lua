@@ -46,10 +46,31 @@ PLAYER = {
     MAX_VELOCITY = 120,
 
     JUMP = {
-        MIN_T = 0.1,
-        MAX_T = 1.1,
-        MIN_FORCE = 800,
-        MAX_FORCE = 5800,
+        -- MIN_T = 0.1,
+        -- MAX_T = 1.1,
+        -- MIN_FORCE = 800,
+        -- MAX_FORCE = 5800,
+        -- F — Force 😎
+        short = {T=0, F=1500},
+        middle = {T=0.2, F=2000},
+        high = {T=0.2, F=3000},
+        BUCKET = {
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'middle',
+            'middle',
+            'middle',
+            'middle',
+            'high',
+        }
     },
 }
 

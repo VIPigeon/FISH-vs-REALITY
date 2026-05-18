@@ -38,3 +38,11 @@ end
 function math.random_float(min, max)
     return min + math.random() * (max - min)
 end
+
+
+function table.shuffle(t)
+    for i = #t, 2, -1 do
+        local j = math.random(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end

@@ -17,9 +17,21 @@ function Game:restart()
     math.randomseed(os.time()*1e7)
     self.refs.player, entity = self.entityPool:grab()
     local player = Entity.addComponent(entity, COMPONENT.PLAYER)
+    -- player.is_last_jump_high = false -- слишком маленький шанс возникновения проблемы
+
     player.jump = {
-        t = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T),
+        -- багоопасно. копирование по ссылке. ебануть не должно
+        bucket = PLAYER.JUMP.BUCKET,
+        i = 1,
+        t = 0,
     }
+    table.shuffle(player.jump.bucket)
+    local jump_type = player.jump.bucket[1]
+    player.jump.t = PLAYER.JUMP[jump_type].T
+
+    -- player.jump = {
+    --     t = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T),
+    -- }
 
     local hitbox = Entity.addComponent(entity, COMPONENT.HITBOX)
     hitbox.offset_x = 0
@@ -84,10 +96,19 @@ function Game:update()
                 if onGround then -- автопрыжок только на земле
                     e.player.jump.t = Time.tick(e.player.jump.t)
                     if e.player.jump.t == 0 then
-                        local T = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T)
-                        e.player.jump.t = T
-                        local F = math.random_float(PLAYER.JUMP.MIN_FORCE, PLAYER.JUMP.MAX_FORCE)
-                        e.rigidbody.acceleration.y = F
+                        -- прыжок
+                        local jump_type = e.player.jump.bucket[e.player.jump.i]
+                        e.rigidbody.acceleration.y = PLAYER.JUMP[jump_type].F
+
+                        if jump_type == 'high' then
+                            table.shuffle(e.player.jump.bucket)
+                            e.player.jump.i = 1
+                        else
+                            e.player.jump.i = e.player.jump.i + 1
+                            -- таймер на следующий прыжок
+                        end
+                        jump_type = e.player.jump.bucket[e.player.jump.i]
+                        e.player.jump.t = PLAYER.JUMP[jump_type].T
                     end
                 else -- горизонтальное перемещение только в воздухе
                     if Input.isDown(KEYBINDS.ACTION_LEFT) then
@@ -140,7 +161,7 @@ function Game:update()
                     -- e.rigidbody.velocity.x = 0                    
                     if math.abs(e.rigidbody.velocity.x) < 75 then
                         local v = e.rigidbody.velocity.x
-                        local V = 50
+                        local V = 36
                         if e.rigidbody.velocity.x > 0 then
                             v = math.max(v, V)
                         else
