@@ -17,8 +17,6 @@ function Game:restart()
     math.randomseed(os.time()*1e7)
     self.refs.player, entity = self.entityPool:grab()
     local player = Entity.addComponent(entity, COMPONENT.PLAYER)
-    -- player.is_last_jump_high = false -- слишком маленький шанс возникновения проблемы
-
     player.jump = {
         -- багоопасно. копирование по ссылке. ебануть не должно
         bucket = PLAYER.JUMP.BUCKET,
@@ -29,9 +27,7 @@ function Game:restart()
     local jump_type = player.jump.bucket[1]
     player.jump.t = PLAYER.JUMP[jump_type].T
 
-    -- player.jump = {
-    --     t = math.random_float(PLAYER.JUMP.MIN_T, PLAYER.JUMP.MAX_T),
-    -- }
+    player.oxygen = PLAYER.OXYGEN
 
     local hitbox = Entity.addComponent(entity, COMPONENT.HITBOX)
     hitbox.offset_x = 0
@@ -59,6 +55,14 @@ function Game:update()
             local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
             local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
             tile = Map.get(Map.worldToTile(centerX, centerY))
+        end
+
+        if e.player then
+            if Map.isWater(tile) then
+                e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
+            else
+                e.player.oxygen = Time.tick(e.player.oxygen)
+            end
         end
 
         if e.player then
@@ -229,7 +233,12 @@ function Game:draw()
 
     self.entityPool:foreach(function(e, ref)
         if e.player then
-            love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
+            print('oxygen: '..e.player.oxygen)
+            if e.player.oxygen < PLAYER.OXYGEN / 3 then
+                love.graphics.setColor(COLOR.GAMEBOY.DARK)
+            else
+                love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
+            end
             love.graphics.rectangle('fill', e.position.x, e.position.y, 8, 8)
         end
     end)
