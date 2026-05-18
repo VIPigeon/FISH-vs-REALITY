@@ -161,7 +161,7 @@ function Game:update()
                     -- e.rigidbody.velocity.x = 0                    
                     if math.abs(e.rigidbody.velocity.x) < 75 then
                         local v = e.rigidbody.velocity.x
-                        local V = 36
+                        local V = PLAYER.MIN_V_FOR_BOUNCE
                         if e.rigidbody.velocity.x > 0 then
                             v = math.max(v, V)
                         else

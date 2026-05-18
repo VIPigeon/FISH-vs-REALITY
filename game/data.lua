@@ -42,9 +42,10 @@ PLAYER = {
     WATER_ACCELERATION = 180,
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
-    GROUND_ACCELERATION = 100,
+    GROUND_ACCELERATION = 36,
     MAX_VELOCITY = 120,
 
+    MIN_V_FOR_BOUNCE = 39,
     JUMP = {
         -- MIN_T = 0.1,
         -- MAX_T = 1.1,
@@ -52,8 +53,8 @@ PLAYER = {
         -- MAX_FORCE = 5800,
         -- F — Force 😎
         short = {T=0, F=1500},
-        middle = {T=0.2, F=2000},
-        high = {T=0.2, F=3000},
+        middle = {T=0.2, F=2400},
+        high = {T=0.2, F=4400},
         BUCKET = {
             'short',
             'short',
@@ -65,6 +66,13 @@ PLAYER = {
             'short',
             'short',
             'short',
+            'short',
+            'short',
+            'short',
+            'short',
+            'middle',
+            'middle',
+            'middle',
             'middle',
             'middle',
             'middle',
