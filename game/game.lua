@@ -102,7 +102,7 @@ function Game:restart()
     local jelly2 = table.deepcopy(jelly)
     jelly2.position.x = 240
     jelly2.position.y = 80
-    jelly2.jelly.program = '..r'
+    jelly2.jelly.program = 'lr'
 
     local checkpointSprite = {
         animation = 1,
@@ -169,10 +169,8 @@ function Game:killPlayer()
         },
     }
 
-    lume.trace("player: ", player, self.handles.player.index, self.handles.player.generation)
     self.entityPool:delete(self.handles.player)
     self.handles.playerDeadBody = self.entityPool:put(playerDeadBody)
-    lume.trace("dead body: ", playerDeadBody, self.handles.playerDeadBody.index, self.handles.playerDeadBody.generation)
 end
 
 
@@ -312,14 +310,14 @@ function Game:update()
                 end
 
                 if e.rigidbody.acceleration.x == 0 then
-                    e.rigidbody.velocity.x = e.rigidbody.velocity.x * WORLD.WATER_FRICTION
+                    e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
                     if math.abs(e.rigidbody.velocity.x) < 1 then
                         e.rigidbody.velocity.x = 0
                     end
                 end
 
                 if e.rigidbody.acceleration.y == 0 then
-                    e.rigidbody.velocity.y = e.rigidbody.velocity.y * WORLD.WATER_FRICTION
+                    e.rigidbody.velocity.y = e.rigidbody.velocity.y * math.pow(WORLD.WATER_FRICTION, deltaTime)
                     if math.abs(e.rigidbody.velocity.y) < 1 then
                         e.rigidbody.velocity.y = 0
                     end
@@ -336,7 +334,6 @@ function Game:update()
 
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    -- e.rigidbody.velocity.x = 0                    
                     if math.abs(e.rigidbody.velocity.x) < 75 then
                         local v = e.rigidbody.velocity.x
                         local V = PLAYER.MIN_V_FOR_BOUNCE
@@ -359,7 +356,7 @@ function Game:update()
                 local onGround = Physics.is_on_ground(e.position, e.hitbox)
 
                 if e.rigidbody.acceleration.x == 0 and onGround then
-                    e.rigidbody.velocity.x = e.rigidbody.velocity.x * WORLD.GROUND_FRICTION
+                    e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.GROUND_FRICTION, deltaTime)
                     if math.abs(e.rigidbody.velocity.x) < 1 then
                         e.rigidbody.velocity.x = 0
                     end
