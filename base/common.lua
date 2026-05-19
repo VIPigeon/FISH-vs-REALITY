@@ -20,6 +20,14 @@ function table.deepcopy(object)
     return result
 end
 
+function table.copy(t)
+    result = {}
+    for k, v in pairs(t) do
+        result[k] = v
+    end
+    return result
+end
+
 function table.contains(t, element)
     for _, value in pairs(t) do
         if value == element then

@@ -15,20 +15,18 @@ function Game:init()
 end
 
 
-function Game:restart()
-    math.randomseed(os.time()*1e7)
-
+function Game:defaultPlayer()
     local player = {
         position = {
-            x = 40,
-            y = 80,
+            x = PLAYER.SPAWN_X,
+            y = PLAYER.SPAWN_Y,
         },
         rectangle = {
             width = 8,
             height = 8,
         },
         player = {
-            oxygen = 0,
+            oxygen = PLAYER.OXYGEN,
             jump = {
                 -- багоопасно. копирование по ссылке. ебануть не должно
                 bucket = PLAYER.JUMP.BUCKET,
@@ -53,10 +51,18 @@ function Game:restart()
             height = 8,
         },
     }
+
     local jump_type = player.player.jump.bucket[1]
-    player.player.oxygen = PLAYER.OXYGEN
     player.player.jump.t = PLAYER.JUMP[jump_type].T
     table.shuffle(player.player.jump.bucket)
+
+    return player
+end
+
+function Game:restart()
+    math.randomseed(os.time()*1e7)
+
+    local player = Game:defaultPlayer()
 
     local jelly = {
         position = { x = 40, y = 60 },
@@ -83,9 +89,67 @@ function Game:restart()
             dashTimer = JELLY.DASH_COOLDOWN,
         },
     }
-    self.entityPool:put(jelly)
 
+    local checkpointSprite = {
+        animation = 1,
+        animations = {
+            ASSETS.checkpointDisabledAnimation:clone(),
+            ASSETS.checkpointActiveAnimation:clone(),
+        },
+        spritesheet = ASSETS.checkpointSpritesheet,
+    }
+    local checkpoints = {
+        {
+            position = { x = 96, y = 56, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+        {
+            position = { x = 176, y = 40, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+        {
+            position = { x = 248, y = 40, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+    }
+
+    self.handles.checkpoints = {}
+    for _, checkpoint in ipairs(checkpoints) do
+        local handle = self.entityPool:put(checkpoint)
+        table.insert(self.handles.checkpoints, handle)
+    end
+
+    self.entityPool:put(jelly)
     self.handles.player = self.entityPool:put(player)
+end
+
+
+function Game:respawnPlayer()
+    -- Находим самый правый чекпоинт
+    local respawnX, respawnY = PLAYER.SPAWN_X, PLAYER.SPAWN_Y
+    self.entityPool:foreach(function(e, ref)
+        if e.checkpoint and e.checkpoint.active then
+            if e.position.x > respawnX then
+                respawnX = e.position.x
+                respawnY = e.position.y
+            end
+        end
+    end)
+
+    local newPlayer = Game:defaultPlayer()
+    newPlayer.position.x = respawnX
+    newPlayer.position.y = respawnY
+    self.entityPool:delete(self.handles.player)
+    self.handles.player = self.entityPool:put(newPlayer)
 end
 
 
@@ -100,6 +164,14 @@ function Game:update()
             tile = Map.get(Map.worldToTile(centerX, centerY))
         end
 
+        if e.checkpoint then
+            local player = self.entityPool:get(self.handles.player)
+            if player.position.x > e.position.x then
+                e.checkpoint.active = true
+                e.sprite.animation = 2
+            end
+        end
+
         if e.player then
             if Map.isWater(tile) then
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
@@ -109,6 +181,10 @@ function Game:update()
         end
 
         if e.player then
+            if e.player.oxygen <= 0 then
+                Game:respawnPlayer()
+            end
+
             if Map.isWater(tile) then
                 e.rigidbody.acceleration.y = 0
                 if Input.isDown(KEYBINDS.ACTION_UP) then

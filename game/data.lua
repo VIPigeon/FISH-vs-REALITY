@@ -45,6 +45,9 @@ PLAYER = {
     GROUND_ACCELERATION = 36,
     MAX_VELOCITY = 120,
 
+    SPAWN_X = 40,
+    SPAWN_Y = 80,
+
     MIN_V_FOR_BOUNCE = 39,
     JUMP = {
         -- MIN_T = 0.1,
@@ -109,6 +112,8 @@ ASSETS = {}
 
 function ASSETS:loadAll()
     self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
+    self.checkpointSpritesheet = love.graphics.newImage('content/checkpoint.png')
+
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
 
@@ -116,4 +121,9 @@ function ASSETS:loadAll()
     self.jellyIdleAnimation = anim8.newAnimation(jellyGrid('1-2', 1), 0.5)
     self.jellyPrepareAnimation = anim8.newAnimation(jellyGrid(3, 1), 1)
     self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
+
+    local checkpointAnimation = anim8.newGrid(8, 8, self.checkpointSpritesheet:getPixelWidth(), self.checkpointSpritesheet:getPixelHeight())
+    lume.trace(self.checkpointSpritesheet)
+    self.checkpointActiveAnimation = anim8.newAnimation(checkpointAnimation('1-4', 1), 0.5)
+    self.checkpointDisabledAnimation = anim8.newAnimation(checkpointAnimation('5-8', 1), 0.5)
 end
