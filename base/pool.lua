@@ -35,9 +35,9 @@ function Pool:get(handle)
     local index = handle.index
     local generation = handle.generation
     if self.used[index] and self.generation[index] == generation then
-        return self.items[index]
+        return self.items[index], true
     else
-        error('invalid handle')
+        return nil, false
     end
 end
 

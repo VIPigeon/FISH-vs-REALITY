@@ -114,9 +114,10 @@ ASSETS = {}
 function ASSETS:loadAll()
     self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
     self.checkpointSpritesheet = love.graphics.newImage('content/checkpoint.png')
+    self.whiteSquare2x2 = love.graphics.newImage('content/whiteSquare2x2.png')
+    self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
-    self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
 
     local jellyGrid = anim8.newGrid(8, 16, self.jellySpritesheet:getPixelWidth(), self.jellySpritesheet:getPixelHeight())
     self.jellyIdleAnimation = anim8.newAnimation(jellyGrid('1-2', 1), 0.5)

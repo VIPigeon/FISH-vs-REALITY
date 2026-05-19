@@ -145,6 +145,37 @@ function Game:restart()
 end
 
 
+function Game:killPlayer()
+    local player, ok = self.entityPool:get(self.handles.player)
+    assert(ok)
+
+    local deathParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
+    deathParticles:setParticleLifetime(0.3, 1.0)
+    deathParticles:setEmissionRate(10.0)
+    
+    deathParticles:setLinearAcceleration(-60, -60, 60, 60) -- Random movement in all directions.
+    deathParticles:setColors(1, 1, 1, 1, 1, 1, 1, 0) -- Fade to transparency.
+
+    local playerDeadBody = {
+        position = { x = player.position.x, y = player.position.y },
+        rigidbody = table.deepcopy(player.rigidbody),
+        hitbox = table.deepcopy(player.hitbox),
+        rectangle = table.deepcopy(player.rectangle),
+        playerDeadBody = {
+            respawnTimer = Timer:new(2.0),
+        },
+        particles = {
+            system = deathParticles,
+        },
+    }
+
+    lume.trace("player: ", player, self.handles.player.index, self.handles.player.generation)
+    self.entityPool:delete(self.handles.player)
+    self.handles.playerDeadBody = self.entityPool:put(playerDeadBody)
+    lume.trace("dead body: ", playerDeadBody, self.handles.playerDeadBody.index, self.handles.playerDeadBody.generation)
+end
+
+
 function Game:respawnPlayer()
     -- Находим самый правый чекпоинт
     local respawnX, respawnY = PLAYER.SPAWN_X, PLAYER.SPAWN_Y
@@ -157,11 +188,11 @@ function Game:respawnPlayer()
         end
     end)
 
-    local newPlayer = Game:createDefaultPlayer()
+    local newPlayer = self:createDefaultPlayer()
     newPlayer.position.x = respawnX
     newPlayer.position.y = respawnY
-    self.entityPool:delete(self.handles.player)
     self.handles.player = self.entityPool:put(newPlayer)
+    self.entityPool:delete(self.handles.playerDeadBody)
 end
 
 
@@ -177,10 +208,12 @@ function Game:update()
         end
 
         if e.checkpoint then
-            local player = self.entityPool:get(self.handles.player)
-            if player.position.x > e.position.x then
-                e.checkpoint.active = true
-                e.sprite.animation = 2
+            local player, ok = self.entityPool:get(self.handles.player)
+            if ok then
+                if player.position.x > e.position.x then
+                    e.checkpoint.active = true
+                    e.sprite.animation = 2
+                end
             end
         end
 
@@ -198,7 +231,7 @@ function Game:update()
 
         if e.player then
             if e.player.oxygen <= 0 then
-                Game:respawnPlayer()
+                self:killPlayer()
             end
 
             if self.debug.godmode or Map.isWater(tile) then
@@ -227,9 +260,9 @@ function Game:update()
                 e.rigidbody.acceleration.x = 0
                 e.rigidbody.acceleration.y = 0
 
-                -- if Input.isJustPressed(KEYBINDS.JUMP) then
-                --     e.rigidbody.acceleration.y = 10000
-                -- end
+                if Input.isJustPressed(KEYBINDS.JUMP) then
+                    self:killPlayer()
+                end
 
                 local onGround = Physics.is_on_ground(e.position, e.hitbox)
                 if onGround then -- автопрыжок только на земле
@@ -344,6 +377,13 @@ function Game:update()
                 --end
             end
 
+            if e.playerDeadBody then
+                e.playerDeadBody.respawnTimer:tick()
+                if e.playerDeadBody.respawnTimer:elapsed() then
+                    self:respawnPlayer()
+                end
+            end
+
             if e.jelly then
                 e.jelly.programTimer:tick()
                 if e.jelly.programTimer:elapsed() then
@@ -382,6 +422,10 @@ function Game:update()
             end
         end
 
+        if e.particles then
+            e.particles.system:update(deltaTime)
+        end
+
         if e.ground_physics and not Map.isWater(tile) then
             local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
             local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -406,7 +450,11 @@ function Game:draw()
     love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
     love.graphics.setColor(COLOR.WHITE)
 
-    local player = Game.entityPool:get(self.handles.player)
+    local player, ok = self.entityPool:get(self.handles.player)
+    if not ok then
+        player, ok = self.entityPool:get(self.handles.playerDeadBody)
+        assert(ok)
+    end
     Camera.x = player.position.x
     Camera.y = player.position.y
 
@@ -436,10 +484,12 @@ function Game:draw()
 
         if e.rectangle then
             --print('oxygen: '..e.player.oxygen)
-            if e.player.oxygen < PLAYER.OXYGEN / 3 then
-                love.graphics.setColor(COLOR.GAMEBOY.DARK)
-            else
-                love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
+            if e.player then
+                if e.player.oxygen < PLAYER.OXYGEN / 3 then
+                    love.graphics.setColor(COLOR.GAMEBOY.DARK)
+                else
+                    love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
+                end
             end
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
@@ -447,6 +497,12 @@ function Game:draw()
         if e.sprite then
             local animation = e.sprite.animations[e.sprite.animation]
             animation:draw(e.sprite.spritesheet, x, y)
+        end
+
+        if e.particles then
+            love.graphics.setColor(COLOR.GAMEBOY.LIGHT)
+            love.graphics.draw(e.particles.system, x + 4, y + 4)
+            love.graphics.setColor(COLOR.WHITE)
         end
     end)
 end
