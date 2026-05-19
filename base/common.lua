@@ -9,15 +9,23 @@
 -- * metatables
 -- * recursive tables
 function table.deepcopy(object)
+    -- Handle non-tables and previously-seen tables.
     if type(object) ~= 'table' then
         return object
     end
 
-    local result = {}
-    for k, v in pairs(object) do
-        result[table.deepcopy(k)] = table.deepcopy(v)
+    if seen and seen[object] then
+        return seen[object]
     end
-    return result
+
+    -- New table; mark it as seen and copy recursively.
+    local s = seen or {}
+    local res = {}
+    s[object] = res
+    for k, v in pairs(object) do
+        res[table.deepcopy(k, s)] = table.deepcopy(v, s)
+    end
+    return setmetatable(res, getmetatable(object))
 end
 
 function table.copy(t)

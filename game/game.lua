@@ -8,14 +8,16 @@ function Game:init()
     Input.init()
     Map.init(ASSETS.tilemap)
 
-    self.entityPool = Pool:new(Entity)
-    self.handles = {}
+    self.debug = {
+        godmode = false,
+        shotHitboxes = false,
+    }
 
     self:restart()
 end
 
 
-function Game:defaultPlayer()
+function Game:createDefaultPlayer()
     local player = {
         position = {
             x = PLAYER.SPAWN_X,
@@ -62,10 +64,15 @@ end
 function Game:restart()
     math.randomseed(os.time()*1e7)
 
-    local player = Game:defaultPlayer()
+    self.entityPool = Pool:new()
+    self.handles = {} -- Тут лежат ссылки на entities, если к ним нужен доступ
+                      -- Handles это прикольная тема, можно почитать тут:
+                      -- https://floooh.github.io/2018/06/17/handles-vs-pointers.html
+
+    local player = Game:createDefaultPlayer()
 
     local jelly = {
-        position = { x = 40, y = 60 },
+        position = { x = 32, y = 80 },
         rigidbody = {
             velocity = { x = 0, y = 0 },
             acceleration = { x = 0, y = 0 },
@@ -86,9 +93,16 @@ function Game:restart()
             spritesheet = ASSETS.jellySpritesheet,
         },
         jelly = {
-            dashTimer = JELLY.DASH_COOLDOWN,
+            program = '..d..r..u....l',
+            programTimer = Timer:new(JELLY.TICK_FREQUENCY),
+            programIndex = 1,
         },
     }
+
+    local jelly2 = table.deepcopy(jelly)
+    jelly2.position.x = 240
+    jelly2.position.y = 80
+    jelly2.jelly.program = '..r'
 
     local checkpointSprite = {
         animation = 1,
@@ -122,13 +136,11 @@ function Game:restart()
         },
     }
 
-    self.handles.checkpoints = {}
     for _, checkpoint in ipairs(checkpoints) do
-        local handle = self.entityPool:put(checkpoint)
-        table.insert(self.handles.checkpoints, handle)
+        self.entityPool:put(checkpoint)
     end
-
     self.entityPool:put(jelly)
+    self.entityPool:put(jelly2)
     self.handles.player = self.entityPool:put(player)
 end
 
@@ -145,7 +157,7 @@ function Game:respawnPlayer()
         end
     end)
 
-    local newPlayer = Game:defaultPlayer()
+    local newPlayer = Game:createDefaultPlayer()
     newPlayer.position.x = respawnX
     newPlayer.position.y = respawnY
     self.entityPool:delete(self.handles.player)
@@ -178,6 +190,10 @@ function Game:update()
             else
                 e.player.oxygen = Time.tick(e.player.oxygen)
             end
+
+            if self.debug.godmode then
+                e.player.oxygen = PLAYER.OXYGEN
+            end
         end
 
         if e.player then
@@ -185,7 +201,7 @@ function Game:update()
                 Game:respawnPlayer()
             end
 
-            if Map.isWater(tile) then
+            if self.debug.godmode or Map.isWater(tile) then
                 e.rigidbody.acceleration.y = 0
                 if Input.isDown(KEYBINDS.ACTION_UP) then
                     e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
@@ -247,7 +263,7 @@ function Game:update()
         end
 
         if e.rigidbody then
-            if Map.isWater(tile) then
+            if (e.player and self.debug.godmode) or Map.isWater(tile) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     if math.abs(e.rigidbody.velocity.x) < 75 then
@@ -329,18 +345,40 @@ function Game:update()
             end
 
             if e.jelly then
-                if e.rigidbody.velocity.y == 0 then
-                    e.sprite.animation = 1
-                end
+                e.jelly.programTimer:tick()
+                if e.jelly.programTimer:elapsed() then
+                    local command = e.jelly.program:sub(e.jelly.programIndex, e.jelly.programIndex)
 
-                if e.jelly.dashTimer == 0 then
-                    e.sprite.animation = 3
-                    e.rigidbody.velocity.y = JELLY.DASH
-                    e.jelly.dashTimer = JELLY.DASH_COOLDOWN
-                elseif e.jelly.dashTimer < 0.5 then
-                    e.sprite.animation = 2
+                    e.jelly.programIndex = 1 + e.jelly.programIndex
+                    if e.jelly.programIndex > e.jelly.program:len() then
+                        e.jelly.programIndex = 1
+                    end
+                    local nextCommand = e.jelly.program:sub(e.jelly.programIndex, e.jelly.programIndex)
+
+                    if command == '.' then
+                        -- Чилим! 🍸
+                        if nextCommand ~= '.' then
+                            -- Похоже скоро будем дэшить
+                            e.sprite.animation = 2
+                        else
+                            e.sprite.animation = 1
+                        end
+                    elseif command == 'u' then
+                        e.rigidbody.velocity.y = JELLY.DASH_STRENGTH
+                        e.sprite.animation = 3
+                    elseif command == 'd' then
+                        e.rigidbody.velocity.y = -1 * JELLY.DASH_STRENGTH
+                        e.sprite.animation = 3
+                    elseif command == 'l' then
+                        e.rigidbody.velocity.x = -1 * JELLY.DASH_STRENGTH
+                        e.sprite.animation = 3
+                    elseif command == 'r' then
+                        e.rigidbody.velocity.x = JELLY.DASH_STRENGTH
+                        e.sprite.animation = 3
+                    end
+
+                    e.jelly.programTimer:restart() 
                 end
-                e.jelly.dashTimer = Time.tick(e.jelly.dashTimer)
             end
         end
 

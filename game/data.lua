@@ -88,7 +88,8 @@ PLAYER = {
 }
 
 JELLY = {
-    DASH = 60,
+    DASH_STRENGTH = 60,
+    TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
 }
 
@@ -123,7 +124,6 @@ function ASSETS:loadAll()
     self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
 
     local checkpointAnimation = anim8.newGrid(8, 8, self.checkpointSpritesheet:getPixelWidth(), self.checkpointSpritesheet:getPixelHeight())
-    lume.trace(self.checkpointSpritesheet)
     self.checkpointActiveAnimation = anim8.newAnimation(checkpointAnimation('1-4', 1), 0.5)
     self.checkpointDisabledAnimation = anim8.newAnimation(checkpointAnimation('5-8', 1), 0.5)
 end

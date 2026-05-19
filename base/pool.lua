@@ -1,14 +1,12 @@
 Pool = {}
 Pool.__index = Pool
 
-function Pool:new(ItemType)
+function Pool:new()
     local object = {
         items = {},
         used = {},
         generation = {},
         freeList = {1},
-
-        ItemType = ItemType,
     }
 
     setmetatable(object, self)
