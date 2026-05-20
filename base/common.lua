@@ -62,3 +62,32 @@ function table.shuffle(t)
         t[i], t[j] = t[j], t[i]
     end
 end
+
+-- Функции ниже даже без неймспейса.
+-- Потому что я больше физически не могу
+-- писать все эти дурацкие префиксы. Во
+-- мне бунтует Сишник.
+
+function isUpper(s)
+    -- Ну что, кто скажет что это неправильно? Никто!
+    -- Значит правильно.
+    return string.lower(s) ~= s
+end
+
+function moduloIncrement(x, mod)
+    x = x + 1
+    if x > mod then
+        x = 1
+    end
+    return x
+end
+
+-- Настоящий пример Open Closed Principle в действии!
+-- Вот это дизайн!
+function string:char(index)
+    return self:sub(index, index)
+end
+
+function string:equalIgnoreCase(s)
+    return string.lower(self) == string.lower(s)
+end

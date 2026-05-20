@@ -4,6 +4,29 @@ function Game:init()
     -- Находится в Data
     ASSETS:loadAll()
 
+    Shader = love.graphics.newShader [[
+    extern number time;
+    extern number center;
+
+    vec4 effect( vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords )
+    {
+        //number alpha = (1 - texture_coords.y);
+        //alpha *= alpha;
+        //texture_coords += vec2(cos(vpos.x), sin(vpos.y));
+        vec4 texcolor = Texel(tex, texture_coords);
+        //vec4 outputColor =  texcolor * color;
+        //outputColor.a = alpha;
+        number howMuch = 0.5 - abs((center - texture_coords.x));
+        number sgn = sign(center - texture_coords.x);
+        number sinY = 0.8 + howMuch * 0.2 * sin(sgn*time + 20*texture_coords.x);
+        if (texture_coords.y > sinY) {
+            return vec4(0);
+        } else {
+            return texcolor;
+        }
+    }
+    ]]
+
     Camera:init()
     Input.init()
     Map.init(ASSETS.tilemap)
@@ -61,6 +84,7 @@ function Game:createDefaultPlayer()
     return player
 end
 
+
 function Game:restart()
     math.randomseed(os.time()*1e7)
 
@@ -78,8 +102,8 @@ function Game:restart()
             acceleration = { x = 0, y = 0 },
         },
         hitbox = {
-            offset_x = 0,
-            offset_y = 0,
+            offset_x = -2,
+            offset_y = -2,
             width = 8,
             height = 8,
         },
@@ -89,11 +113,14 @@ function Game:restart()
                 ASSETS.jellyIdleAnimation:clone(),
                 ASSETS.jellyPrepareAnimation:clone(),
                 ASSETS.jellyDashAnimation:clone(),
+                ASSETS.jellyPinkIdleAnimation:clone(),
+                ASSETS.jellyPinkPrepareAnimation:clone(),
+                ASSETS.jellyPinkDashAnimation:clone(),
             },
             spritesheet = ASSETS.jellySpritesheet,
         },
         jelly = {
-            program = '..d..r..u....l',
+            program = '..D..R..U....L',
             programTimer = Timer:new(JELLY.TICK_FREQUENCY),
             programIndex = 1,
         },
@@ -136,11 +163,24 @@ function Game:restart()
         },
     }
 
+    local effect = {
+        position = { x = 80, y = 56 },
+        shader = Shader,
+        sprite = {
+            animation = 1,
+            animations = {
+                ASSETS.testAnimation:clone(),
+            },
+            spritesheet = ASSETS.testTexture,
+        }
+    }
+
     for _, checkpoint in ipairs(checkpoints) do
         self.entityPool:put(checkpoint)
     end
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
+    self.entityPool:put(effect)
     self.handles.player = self.entityPool:put(player)
 end
 
@@ -199,10 +239,13 @@ function Game:update()
 
     self.entityPool:foreach(function(e, ref)
         local tile = 0
+        local tileX = -1
+        local tileY = -1
         if e.position and e.hitbox then
             local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
             local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
-            tile = Map.get(Map.worldToTile(centerX, centerY))
+            tileX, tileY = Map.worldToTile(centerX, centerY)
+            tile = Map.get(tileX, tileY)
         end
 
         if e.checkpoint then
@@ -384,34 +427,96 @@ function Game:update()
             if e.jelly then
                 e.jelly.programTimer:tick()
                 if e.jelly.programTimer:elapsed() then
-                    local command = e.jelly.program:sub(e.jelly.programIndex, e.jelly.programIndex)
+                    local command = e.jelly.program:char(e.jelly.programIndex)
+                    local bigDash = command ~= '.' and isUpper(command)
+                    command = command:lower()
 
-                    e.jelly.programIndex = 1 + e.jelly.programIndex
-                    if e.jelly.programIndex > e.jelly.program:len() then
-                        e.jelly.programIndex = 1
+                    local nextCommandIndex = e.jelly.programIndex
+                    while e.jelly.program:char(nextCommandIndex) == '.' do
+                        nextCommandIndex = moduloIncrement(nextCommandIndex, e.jelly.program:len())
                     end
-                    local nextCommand = e.jelly.program:sub(e.jelly.programIndex, e.jelly.programIndex)
+
+                    local nextCommand = e.jelly.program:char(nextCommandIndex)
+                    local nextCommandBig = isUpper(nextCommand)
+                    nextCommand = nextCommand:lower()
+
+                    local rotations = {
+                        ['u'] = 0,
+                        ['d'] = math.pi,
+                        ['l'] = -1 * math.pi / 2.0,
+                        ['r'] = math.pi / 2.0,
+                    }
+                    local directions = {
+                        ['u'] = {  0, -1 },
+                        ['d'] = {  0,  1 },
+                        ['l'] = { -1,  0 },
+                        ['r'] = {  1,  0 },
+                    }
+
+                    e.sprite.rotation = rotations[command]
+
+                    local dashStrength = 0.0
+                    if bigDash then
+                        local distanceToWallWereFacing = 0
+
+                        local tx = tileX
+                        local ty = tileY
+                        while not Map.isSolid(tx, ty) and math.abs(ty - tileY) < 10 and math.abs(tx - tileX) < 10 do
+                            tx = tx + directions[command][1]
+                            ty = ty + directions[command][2]
+                        end
+
+                        if nextCommand == 'u' then
+                            distanceToWallWereFacing = e.position.y + e.hitbox.offset_y - (ty * 8 + 8)
+                        elseif nextCommand == 'd' then
+                            distanceToWallWereFacing = (ty * 8) - (e.position.y + e.hitbox.offset_y + e.hitbox.height)
+                        elseif nextCommand == 'l' then
+                            distanceToWallWereFacing = e.position.x + e.hitbox.offset_x - (tx * 8 + 8)
+                        elseif nextCommand == 'r' then
+                            distanceToWallWereFacing = (tx * 8) - (e.position.x + e.hitbox.offset_x + e.hitbox.width)
+                        end
+
+                        local frictionPerFrame = math.pow(WORLD.WATER_FRICTION, deltaTime)
+                        local toWallDashStrength = distanceToWallWereFacing * (1 - frictionPerFrame) / deltaTime
+
+                        local desiredBounceDistance = 4
+                        local bounceFactor = PLAYER.WATER_BOUNCE
+                        local extraForce = (desiredBounceDistance * (1 - frictionPerFrame) / deltaTime) * bounceFactor
+
+                        dashStrength = toWallDashStrength + extraForce
+                    else
+                        dashStrength = JELLY.DASH_STRENGTH
+                    end
+
+                    -- Чтобы медуза меняла цвет. Геймджем, ничего не попишешь...
+                    local animationBonus = nextCommandBig and 3 or 0
+
+                    e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
 
                     if command == '.' then
                         -- Чилим! 🍸
-                        if nextCommand ~= '.' then
+                        if e.jelly.program:char(e.jelly.programIndex) ~= '.' then
                             -- Похоже скоро будем дэшить
-                            e.sprite.animation = 2
+                            if nextCommandBig then
+                                e.sprite.animation = 3 + 2
+                            else
+                                e.sprite.animation = 2
+                            end
                         else
-                            e.sprite.animation = 1
+                            e.sprite.animation = 1 + animationBonus
                         end
                     elseif command == 'u' then
-                        e.rigidbody.velocity.y = JELLY.DASH_STRENGTH
-                        e.sprite.animation = 3
+                        e.rigidbody.velocity.y = dashStrength
+                        e.sprite.animation = 3 + animationBonus
                     elseif command == 'd' then
-                        e.rigidbody.velocity.y = -1 * JELLY.DASH_STRENGTH
-                        e.sprite.animation = 3
+                        e.rigidbody.velocity.y = -1 * dashStrength
+                        e.sprite.animation = 3 + animationBonus
                     elseif command == 'l' then
-                        e.rigidbody.velocity.x = -1 * JELLY.DASH_STRENGTH
-                        e.sprite.animation = 3
+                        e.rigidbody.velocity.x = -1 * dashStrength
+                        e.sprite.animation = 3 + animationBonus
                     elseif command == 'r' then
-                        e.rigidbody.velocity.x = JELLY.DASH_STRENGTH
-                        e.sprite.animation = 3
+                        e.rigidbody.velocity.x = dashStrength
+                        e.sprite.animation = 3 + animationBonus
                     end
 
                     e.jelly.programTimer:restart() 
@@ -421,6 +526,11 @@ function Game:update()
 
         if e.particles then
             e.particles.system:update(deltaTime)
+        end
+
+        if e.shader then
+            e.shader:send('time', love.timer.getTime())
+            e.shader:send('center', 0.5)
         end
 
         if e.ground_physics and not Map.isWater(tile) then
@@ -491,9 +601,22 @@ function Game:draw()
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
 
-        if e.sprite then
+        if e.shader then
+            love.graphics.setShader(Shader)
+            love.graphics.setColor(COLOR.WHITE)
+            love.graphics.draw(e.sprite.spritesheet, x, y, 0, 5, 1)
+            love.graphics.setShader()
+        end
+
+        if e.sprite and not e.shader then
             local animation = e.sprite.animations[e.sprite.animation]
-            animation:draw(e.sprite.spritesheet, x, y)
+            local ox = 0
+            local oy = 0
+            if e.hitbox then
+                ox = e.hitbox.offset_x + e.hitbox.width / 2
+                oy = e.hitbox.offset_y + e.hitbox.height / 2
+            end
+            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation, 1, 1, ox, oy)
         end
 
         if e.particles then

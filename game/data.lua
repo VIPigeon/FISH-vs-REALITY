@@ -96,6 +96,7 @@ PLAYER = {
 
 JELLY = {
     DASH_STRENGTH = 60,
+    BIG_DASH_STRENGTH = 120,
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
 }
@@ -131,6 +132,7 @@ ASSETS = {}
 function ASSETS:loadAll()
     self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
     self.checkpointSpritesheet = love.graphics.newImage('content/checkpoint.png')
+    self.testTexture = love.graphics.newImage('content/testTexture.png')
     self.whiteSquare2x2 = love.graphics.newImage('content/whiteSquare2x2.png')
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
 
@@ -141,7 +143,14 @@ function ASSETS:loadAll()
     self.jellyPrepareAnimation = anim8.newAnimation(jellyGrid(3, 1), 1)
     self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
 
+    self.jellyPinkIdleAnimation = anim8.newAnimation(jellyGrid('5-6', 1), 0.5)
+    self.jellyPinkPrepareAnimation = anim8.newAnimation(jellyGrid(7, 1), 1)
+    self.jellyPinkDashAnimation = anim8.newAnimation(jellyGrid(8, 1), 1)
+
     local checkpointAnimation = anim8.newGrid(8, 8, self.checkpointSpritesheet:getPixelWidth(), self.checkpointSpritesheet:getPixelHeight())
     self.checkpointActiveAnimation = anim8.newAnimation(checkpointAnimation('1-4', 1), 0.5)
     self.checkpointDisabledAnimation = anim8.newAnimation(checkpointAnimation('5-8', 1), 0.5)
+
+    local testGrid = anim8.newGrid(16, 16, self.testTexture:getPixelWidth(), self.testTexture:getPixelHeight())
+    self.testAnimation = anim8.newAnimation(testGrid(1, 1), 0.5)
 end

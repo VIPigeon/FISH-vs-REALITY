@@ -99,4 +99,81 @@ function love.keypressed(key, scancode, isrepeat)
    if key == 'h' then
        Game.debug.showHitbox = not Game.debug.showHitbox
    end
+
+   if key == 'f' then
+       if LOCKED_FPS == 60 then
+           LOCKED_FPS = 165
+       else
+           LOCKED_FPS = 60
+       end
+       SINGLE_FRAME_DURATION = 1 / LOCKED_FPS
+   end
 end
+
+-- ❗ ВАЖНО (но не знаю для кого)
+--
+-- Нормальным людям love.run переопределять не нужно. Но у нас PANDA KILLER.
+--
+-- Очень удобно, что в игре мы никогда не используем deltaTime при вычислениях.
+-- Действительно, зачем волноваться о таким мелочах как независимость от скорости
+-- кадров? В TIC-80 у нас всегда 60 FPS!
+--
+-- И вот я перенес все на love, и он с VSync выдает мне 165 FPS-ов. Игра стала
+-- в два с половиной раза быстрее. Встроенного способа поставить лимит FPS нету,
+-- поэтому я взял стандартную реализацию из https://love2d.org/wiki/love.run,
+-- и добавил sleep в конец. Грязно, но проблему решает. Но тогда разве это грязно?
+-- Решил конкретную проблему самым прямолинейным способом, не выдумывая какие-то
+-- сложные системы или обходы, а просто добавив парочку строчек кода. Думайте.
+LOCKED_FPS = 60
+SINGLE_FRAME_DURATION = 1 / LOCKED_FPS
+
+function love.run()
+    if love.load then love.load(love.arg.parseGameArguments(arg), arg) end
+
+    -- We don't want the first frame's dt to include time taken by love.load.
+    if love.timer then love.timer.step() end
+
+    local dt = 0
+
+    -- Main loop time.
+    return function()
+        -- Process events.
+        if love.event then
+            love.event.pump()
+            for name, a,b,c,d,e,f in love.event.poll() do
+                if name == "quit" then
+                    if not love.quit or not love.quit() then
+                        return a or 0
+                    end
+                end
+                love.handlers[name](a,b,c,d,e,f)
+            end
+        end
+
+        -- Update dt, as we'll be passing it to update
+        if love.timer then
+            global_frame_start = love.timer.getTime()
+            dt = love.timer.step()
+        end
+
+        -- Call update and draw
+        if love.update then love.update(dt) end -- will pass 0 if love.timer is disabled
+
+        if love.graphics and love.graphics.isActive() then
+            love.graphics.origin()
+            love.graphics.clear(love.graphics.getBackgroundColor())
+
+            if love.draw then love.draw() end
+
+            love.graphics.present()
+        end
+
+        if love.timer then
+            local frame_end = love.timer.getTime()
+            if frame_end - global_frame_start < SINGLE_FRAME_DURATION then
+                love.timer.sleep(global_frame_start + SINGLE_FRAME_DURATION - frame_end)
+            end
+        end
+    end
+end
+
