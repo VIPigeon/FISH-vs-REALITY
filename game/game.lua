@@ -102,8 +102,8 @@ function Game:restart()
             acceleration = { x = 0, y = 0 },
         },
         hitbox = {
-            offset_x = -2,
-            offset_y = -2,
+            offset_x = 0,
+            offset_y = 0,
             width = 8,
             height = 8,
         },
@@ -441,10 +441,10 @@ function Game:update()
                     nextCommand = nextCommand:lower()
 
                     local rotations = {
-                        ['u'] = 0,
-                        ['d'] = math.pi,
-                        ['l'] = -1 * math.pi / 2.0,
-                        ['r'] = math.pi / 2.0,
+                        ['u'] = { rotation = 0,             flipH = false, flipV = false },
+                        ['d'] = { rotation = ROTATE_180,             flipH = false, flipV = true },
+                        ['l'] = { rotation = ROTATE_LEFT, flipH = false, flipV = false },
+                        ['r'] = { rotation = ROTATE_RIGHT, flipH = false, flipV = false },
                     }
                     local directions = {
                         ['u'] = {  0, -1 },
@@ -453,7 +453,11 @@ function Game:update()
                         ['r'] = {  1,  0 },
                     }
 
-                    e.sprite.rotation = rotations[command]
+                    if command == '.' and nextCommand ~= '.' then
+                        e.sprite.rotation = rotations[nextCommand].rotation
+                        e.sprite.flipH = rotations[nextCommand].flipH
+                        e.sprite.flipV = rotations[nextCommand].flipV
+                    end
 
                     local dashStrength = 0.0
                     if bigDash then
@@ -480,8 +484,10 @@ function Game:update()
                         local toWallDashStrength = distanceToWallWereFacing * (1 - frictionPerFrame) / deltaTime
 
                         local desiredBounceDistance = 4
-                        local bounceFactor = PLAYER.WATER_BOUNCE
-                        local extraForce = (desiredBounceDistance * (1 - frictionPerFrame) / deltaTime) * bounceFactor
+                        if command == 'u' or command == 'd' then
+                            desiredBounceDistance = 2*desiredBounceDistance
+                        end
+                        local extraForce = desiredBounceDistance * (1 - frictionPerFrame) / deltaTime
 
                         dashStrength = toWallDashStrength + extraForce
                     else
@@ -610,13 +616,20 @@ function Game:draw()
 
         if e.sprite and not e.shader then
             local animation = e.sprite.animations[e.sprite.animation]
-            local ox = 0
-            local oy = 0
-            if e.hitbox then
-                ox = e.hitbox.offset_x + e.hitbox.width / 2
-                oy = e.hitbox.offset_y + e.hitbox.height / 2
+            local w, h = animation:getDimensions()
+            if e.sprite.rotation then
+                if e.sprite.rotation == ROTATE_RIGHT then
+                    x = x + w
+                    y = y
+                elseif e.sprite.rotation == ROTATE_LEFT then
+                    x = x
+                    y = y + h / 2
+                elseif e.sprite.rotation == ROTATE_180 then
+                    x = x + w
+                    y = y + h / 2
+                end
             end
-            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation, 1, 1, ox, oy)
+            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
         end
 
         if e.particles then

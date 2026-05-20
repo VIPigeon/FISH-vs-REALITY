@@ -44,6 +44,10 @@ for k, v in pairs(KEYBINDS) do
     KEYBINDS[k].name = string.lower(k)
 end
 
+ROTATE_RIGHT =      0.5 * math.pi
+ROTATE_LEFT  = -1 * 0.5 * math.pi
+ROTATE_180 =              math.pi
+
 
 PLAYER = {
     WATER_ACCELERATION = 180,
