@@ -22,6 +22,11 @@ function Timer:elapsed()
 end
 
 
+function Timer:timeElapsed()
+    return self.duration - self.currentTime
+end
+
+
 function Timer:restart()
     self.currentTime = self.duration
 end

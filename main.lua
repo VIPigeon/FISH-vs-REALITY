@@ -108,6 +108,13 @@ function love.keypressed(key, scancode, isrepeat)
        end
        SINGLE_FRAME_DURATION = 1 / LOCKED_FPS
    end
+
+   if key == 'j' then
+       local e = Game.entityPool:get(Game.handles.shader)
+       e.shader.timer:restart()
+       e.shader.shader:send('center', math.random())
+       e.shader.shader:send('strength', 1)
+   end
 end
 
 -- ❗ ВАЖНО (но не знаю для кого)

@@ -7,22 +7,43 @@ function Game:init()
     Shader = love.graphics.newShader [[
     extern number time;
     extern number center;
+    extern number strength;
 
-    vec4 effect( vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords )
-    {
-        //number alpha = (1 - texture_coords.y);
-        //alpha *= alpha;
-        //texture_coords += vec2(cos(vpos.x), sin(vpos.y));
-        vec4 texcolor = Texel(tex, texture_coords);
-        //vec4 outputColor =  texcolor * color;
-        //outputColor.a = alpha;
-        number howMuch = 0.5 - abs((center - texture_coords.x));
-        number sgn = sign(center - texture_coords.x);
-        number sinY = 0.8 + howMuch * 0.2 * sin(sgn*time + 20*texture_coords.x);
-        if (texture_coords.y > sinY) {
+    number lerp(number a, number b, number t) {
+        return a + (b - a) * t;
+    }
+
+    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+
+        if (time < 0) {
             return vec4(0);
-        } else {
+        }
+        if (center < 0) {
+            return vec4(0);
+        }
+        if (strength < 0) {
+            return vec4(0);
+        }
+
+        vec4 texcolor = Texel(tex, texture_coords);
+
+        number amplitude = 0.6;
+        number waterCutoff = amplitude;
+        number frequency = 10;
+        number waveSpeed = 1;
+        number waveFadeOut = 0.5;
+
+        number centerLeft = center + time;
+        number centerRight = center - time;
+        number distFromCenter = min(abs(texture_coords.x - centerLeft), abs(texture_coords.x - centerRight));
+        number fadeOut = lerp(1, 0, time / 1.0);
+
+        number wave = fadeOut * strength * max(0, waveFadeOut - distFromCenter) * amplitude * cos(frequency * (distFromCenter - waveSpeed * time));
+
+        if (texture_coords.y > waterCutoff + wave) {
             return texcolor;
+        } else {
+            return vec4(0);
         }
     }
     ]]
@@ -165,7 +186,10 @@ function Game:restart()
 
     local effect = {
         position = { x = 80, y = 56 },
-        shader = Shader,
+        shader = {
+            shader = Shader,
+            timer = Timer:new(1.0),
+        },
         sprite = {
             animation = 1,
             animations = {
@@ -180,7 +204,7 @@ function Game:restart()
     end
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
-    self.entityPool:put(effect)
+    self.handles.shader = self.entityPool:put(effect)
     self.handles.player = self.entityPool:put(player)
 end
 
@@ -535,8 +559,12 @@ function Game:update()
         end
 
         if e.shader then
-            e.shader:send('time', love.timer.getTime())
-            e.shader:send('center', 0.5)
+            if not e.shader.timer:elapsed() then
+                e.shader.timer:tick()
+                e.shader.shader:send('time', e.shader.timer:timeElapsed())
+            else
+                e.shader.shader:send('strength', 0)
+            end
         end
 
         if e.ground_physics and not Map.isWater(tile) then
@@ -608,7 +636,7 @@ function Game:draw()
         end
 
         if e.shader then
-            love.graphics.setShader(Shader)
+            love.graphics.setShader(e.shader.shader)
             love.graphics.setColor(COLOR.WHITE)
             love.graphics.draw(e.sprite.spritesheet, x, y, 0, 5, 1)
             love.graphics.setShader()
