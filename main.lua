@@ -10,6 +10,7 @@ require('base.pool')
 require('base.rect')
 require('base.hitbox')
 require('base.timer')
+require('base.box_map')
 
 require('game.camera')
 require('game.data')
