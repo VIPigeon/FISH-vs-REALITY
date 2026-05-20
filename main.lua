@@ -109,12 +109,6 @@ function love.keypressed(key, scancode, isrepeat)
        SINGLE_FRAME_DURATION = 1 / LOCKED_FPS
    end
 
-   if key == 'j' then
-       local e = Game.entityPool:get(Game.handles.shader)
-       e.shader.timer:restart()
-       e.shader.shader:send('center', math.random())
-       e.shader.shader:send('strength', 1)
-   end
 end
 
 -- ❗ ВАЖНО (но не знаю для кого)
@@ -131,7 +125,7 @@ end
 -- и добавил sleep в конец. Грязно, но проблему решает. Но тогда разве это грязно?
 -- Решил конкретную проблему самым прямолинейным способом, не выдумывая какие-то
 -- сложные системы или обходы, а просто добавив парочку строчек кода. Думайте.
-LOCKED_FPS = 60
+LOCKED_FPS = 165
 SINGLE_FRAME_DURATION = 1 / LOCKED_FPS
 
 function love.run()

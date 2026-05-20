@@ -30,3 +30,30 @@ end
 function Timer:restart()
     self.currentTime = self.duration
 end
+
+
+function Timer:stop()
+    self.currentTime = 0
+end
+
+
+CountingTimer = {}
+CountingTimer.__index = CountingTimer
+
+function CountingTimer:new()
+    local object = {
+        duration = 0.0,
+    }
+
+    setmetatable(object, self)
+    return object
+end
+
+
+function CountingTimer:tick(deltaTime)
+    self.duration = self.duration + deltaTime
+end
+
+
+function CountingTimer:reset()
+end

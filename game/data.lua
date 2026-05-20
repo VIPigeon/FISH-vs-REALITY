@@ -44,6 +44,14 @@ for k, v in pairs(KEYBINDS) do
     KEYBINDS[k].name = string.lower(k)
 end
 
+
+TRANSITION = {
+    NIL = 0,
+    LAND_TO_WATER = 1,
+    WATER_TO_LAND = 2,
+}
+
+
 ROTATE_RIGHT =      0.5 * math.pi
 ROTATE_LEFT  = -1 * 0.5 * math.pi
 ROTATE_180 =              math.pi
@@ -139,6 +147,7 @@ function ASSETS:loadAll()
     self.testTexture = love.graphics.newImage('content/testTexture.png')
     self.whiteSquare2x2 = love.graphics.newImage('content/whiteSquare2x2.png')
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
+    self.bluePixel = love.graphics.newImage('content/bluePixel.png')
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
@@ -157,4 +166,43 @@ function ASSETS:loadAll()
 
     local testGrid = anim8.newGrid(16, 16, self.testTexture:getPixelWidth(), self.testTexture:getPixelHeight())
     self.testAnimation = anim8.newAnimation(testGrid(1, 1), 0.5)
+
+    self.waterSurfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface)
 end
+
+SHADERS_SOURCES = {
+
+waterSurface = [[
+extern number time;
+extern number center;
+extern number strength;
+
+number lerp(number a, number b, number t) {
+    return a + (b - a) * t;
+}
+
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+    vec4 texcolor = Texel(tex, texture_coords);
+
+    number amplitude = 0.6;
+    number waterCutoff = amplitude;
+    number frequency = 10;
+    number waveSpeed = 1;
+    number waveFadeOut = 0.5;
+
+    number centerLeft = center + time;
+    number centerRight = center - time;
+    number distFromCenter = min(abs(texture_coords.x - centerLeft), abs(texture_coords.x - centerRight));
+    number fadeOut = lerp(1, 0, time / 1.0);
+
+    number wave = fadeOut * strength * max(0, waveFadeOut - distFromCenter) * amplitude * cos(frequency * (distFromCenter - waveSpeed * time));
+
+    if (texture_coords.y > waterCutoff + wave) {
+        return texcolor;
+    } else {
+        return vec4(0);
+    }
+}
+]]
+
+}

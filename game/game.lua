@@ -4,50 +4,6 @@ function Game:init()
     -- Находится в Data
     ASSETS:loadAll()
 
-    Shader = love.graphics.newShader [[
-    extern number time;
-    extern number center;
-    extern number strength;
-
-    number lerp(number a, number b, number t) {
-        return a + (b - a) * t;
-    }
-
-    vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-
-        if (time < 0) {
-            return vec4(0);
-        }
-        if (center < 0) {
-            return vec4(0);
-        }
-        if (strength < 0) {
-            return vec4(0);
-        }
-
-        vec4 texcolor = Texel(tex, texture_coords);
-
-        number amplitude = 0.6;
-        number waterCutoff = amplitude;
-        number frequency = 10;
-        number waveSpeed = 1;
-        number waveFadeOut = 0.5;
-
-        number centerLeft = center + time;
-        number centerRight = center - time;
-        number distFromCenter = min(abs(texture_coords.x - centerLeft), abs(texture_coords.x - centerRight));
-        number fadeOut = lerp(1, 0, time / 1.0);
-
-        number wave = fadeOut * strength * max(0, waveFadeOut - distFromCenter) * amplitude * cos(frequency * (distFromCenter - waveSpeed * time));
-
-        if (texture_coords.y > waterCutoff + wave) {
-            return texcolor;
-        } else {
-            return vec4(0);
-        }
-    }
-    ]]
-
     Camera:init()
     Input.init()
     Map.init(ASSETS.tilemap)
@@ -113,8 +69,22 @@ function Game:restart()
     self.handles = {} -- Тут лежат ссылки на entities, если к ним нужен доступ
                       -- Handles это прикольная тема, можно почитать тут:
                       -- https://floooh.github.io/2018/06/17/handles-vs-pointers.html
+    self.handles.waterSurfaces = {}
 
     local player = Game:createDefaultPlayer()
+
+    local waterSurface = {
+        position = { x = 24, y = 72 },
+        waterSurface = {
+            width = 80 - 4*8,
+            height = 8,
+        },
+        shader = {
+            shader = ASSETS.waterSurfaceShader,
+            timer = Timer:new(1.0),
+        },
+    }
+    waterSurface.shader.timer:stop()
 
     local jelly = {
         position = { x = 32, y = 80 },
@@ -184,27 +154,14 @@ function Game:restart()
         },
     }
 
-    local effect = {
-        position = { x = 80, y = 56 },
-        shader = {
-            shader = Shader,
-            timer = Timer:new(1.0),
-        },
-        sprite = {
-            animation = 1,
-            animations = {
-                ASSETS.testAnimation:clone(),
-            },
-            spritesheet = ASSETS.testTexture,
-        }
-    }
 
     for _, checkpoint in ipairs(checkpoints) do
         self.entityPool:put(checkpoint)
     end
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
-    self.handles.shader = self.entityPool:put(effect)
+
+    table.insert(self.handles.waterSurfaces, self.entityPool:put(waterSurface))
     self.handles.player = self.entityPool:put(player)
 end
 
@@ -299,6 +256,18 @@ function Game:update()
                 self:killPlayer()
             end
 
+            if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
+                for _, handle in ipairs(self.handles.waterSurfaces) do
+                    local waterEntity = self.entityPool:get(handle)
+
+                    local impactX = e.position.x - waterEntity.position.x
+
+                    waterEntity.shader.timer:restart()
+                    waterEntity.shader.shader:send('center', impactX / waterEntity.waterSurface.width)
+                    waterEntity.shader.shader:send('strength', 1)
+                end
+            end
+
             if self.debug.godmode or Map.isWater(tile) then
                 e.rigidbody.acceleration.y = 0
                 if Input.isDown(KEYBINDS.ACTION_UP) then
@@ -361,6 +330,8 @@ function Game:update()
         end
 
         if e.rigidbody then
+            local wereWeInWaterAtStart = Map.isWater(tile)
+
             if (e.player and self.debug.godmode) or Map.isWater(tile) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
@@ -435,122 +406,130 @@ function Game:update()
 
                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
                 e.rigidbody.velocity.y = e.rigidbody.velocity.y + vel * 0.5 * deltaTime
-
-                --if not onGround then
-                --    e.rigidbody.velocity.y = e.rigidbody.velocity.y - GRAVITY * deltaTime
-                --end
             end
 
-            if e.playerDeadBody then
-                e.playerDeadBody.respawnTimer:tick()
-                if e.playerDeadBody.respawnTimer:elapsed() then
-                    self:respawnPlayer()
+            local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
+            local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
+            local areWeInWater = Map.isWater(Map.get(Map.worldToTile(centerX, centerY)))
+
+            if areWeInWater and not wereWeInWaterAtStart then
+                e.rigidbody.transition = TRANSITION.LAND_TO_WATER
+            elseif not areWeInWater and wereWeInWaterAtStart then
+                e.rigidbody.transition = TRANSITION.WATER_TO_LAND
+            else
+                e.rigidbody.transition = TRANSITION.NIL
+            end
+        end
+
+        if e.playerDeadBody then
+            e.playerDeadBody.respawnTimer:tick()
+            if e.playerDeadBody.respawnTimer:elapsed() then
+                self:respawnPlayer()
+            end
+        end
+
+        if e.jelly then
+            e.jelly.programTimer:tick()
+            if e.jelly.programTimer:elapsed() then
+                local command = e.jelly.program:char(e.jelly.programIndex)
+                local bigDash = command ~= '.' and isUpper(command)
+                command = command:lower()
+
+                local nextCommandIndex = e.jelly.programIndex
+                while e.jelly.program:char(nextCommandIndex) == '.' do
+                    nextCommandIndex = moduloIncrement(nextCommandIndex, e.jelly.program:len())
                 end
-            end
 
-            if e.jelly then
-                e.jelly.programTimer:tick()
-                if e.jelly.programTimer:elapsed() then
-                    local command = e.jelly.program:char(e.jelly.programIndex)
-                    local bigDash = command ~= '.' and isUpper(command)
-                    command = command:lower()
+                local nextCommand = e.jelly.program:char(nextCommandIndex)
+                local nextCommandBig = isUpper(nextCommand)
+                nextCommand = nextCommand:lower()
 
-                    local nextCommandIndex = e.jelly.programIndex
-                    while e.jelly.program:char(nextCommandIndex) == '.' do
-                        nextCommandIndex = moduloIncrement(nextCommandIndex, e.jelly.program:len())
+                local rotations = {
+                    ['u'] = { rotation = 0,             flipH = false, flipV = false },
+                    ['d'] = { rotation = ROTATE_180,             flipH = false, flipV = true },
+                    ['l'] = { rotation = ROTATE_LEFT, flipH = false, flipV = false },
+                    ['r'] = { rotation = ROTATE_RIGHT, flipH = false, flipV = false },
+                }
+                local directions = {
+                    ['u'] = {  0, -1 },
+                    ['d'] = {  0,  1 },
+                    ['l'] = { -1,  0 },
+                    ['r'] = {  1,  0 },
+                }
+
+                if command == '.' and nextCommand ~= '.' then
+                    e.sprite.rotation = rotations[nextCommand].rotation
+                    e.sprite.flipH = rotations[nextCommand].flipH
+                    e.sprite.flipV = rotations[nextCommand].flipV
+                end
+
+                local dashStrength = 0.0
+                if bigDash then
+                    local distanceToWallWereFacing = 0
+
+                    local tx = tileX
+                    local ty = tileY
+                    while not Map.isSolid(tx, ty) and math.abs(ty - tileY) < 10 and math.abs(tx - tileX) < 10 do
+                        tx = tx + directions[command][1]
+                        ty = ty + directions[command][2]
                     end
 
-                    local nextCommand = e.jelly.program:char(nextCommandIndex)
-                    local nextCommandBig = isUpper(nextCommand)
-                    nextCommand = nextCommand:lower()
-
-                    local rotations = {
-                        ['u'] = { rotation = 0,             flipH = false, flipV = false },
-                        ['d'] = { rotation = ROTATE_180,             flipH = false, flipV = true },
-                        ['l'] = { rotation = ROTATE_LEFT, flipH = false, flipV = false },
-                        ['r'] = { rotation = ROTATE_RIGHT, flipH = false, flipV = false },
-                    }
-                    local directions = {
-                        ['u'] = {  0, -1 },
-                        ['d'] = {  0,  1 },
-                        ['l'] = { -1,  0 },
-                        ['r'] = {  1,  0 },
-                    }
-
-                    if command == '.' and nextCommand ~= '.' then
-                        e.sprite.rotation = rotations[nextCommand].rotation
-                        e.sprite.flipH = rotations[nextCommand].flipH
-                        e.sprite.flipV = rotations[nextCommand].flipV
+                    if nextCommand == 'u' then
+                        distanceToWallWereFacing = e.position.y + e.hitbox.offset_y - (ty * 8 + 8)
+                    elseif nextCommand == 'd' then
+                        distanceToWallWereFacing = (ty * 8) - (e.position.y + e.hitbox.offset_y + e.hitbox.height)
+                    elseif nextCommand == 'l' then
+                        distanceToWallWereFacing = e.position.x + e.hitbox.offset_x - (tx * 8 + 8)
+                    elseif nextCommand == 'r' then
+                        distanceToWallWereFacing = (tx * 8) - (e.position.x + e.hitbox.offset_x + e.hitbox.width)
                     end
 
-                    local dashStrength = 0.0
-                    if bigDash then
-                        local distanceToWallWereFacing = 0
+                    local frictionPerFrame = math.pow(WORLD.WATER_FRICTION, deltaTime)
+                    local toWallDashStrength = distanceToWallWereFacing * (1 - frictionPerFrame) / deltaTime
 
-                        local tx = tileX
-                        local ty = tileY
-                        while not Map.isSolid(tx, ty) and math.abs(ty - tileY) < 10 and math.abs(tx - tileX) < 10 do
-                            tx = tx + directions[command][1]
-                            ty = ty + directions[command][2]
-                        end
-
-                        if nextCommand == 'u' then
-                            distanceToWallWereFacing = e.position.y + e.hitbox.offset_y - (ty * 8 + 8)
-                        elseif nextCommand == 'd' then
-                            distanceToWallWereFacing = (ty * 8) - (e.position.y + e.hitbox.offset_y + e.hitbox.height)
-                        elseif nextCommand == 'l' then
-                            distanceToWallWereFacing = e.position.x + e.hitbox.offset_x - (tx * 8 + 8)
-                        elseif nextCommand == 'r' then
-                            distanceToWallWereFacing = (tx * 8) - (e.position.x + e.hitbox.offset_x + e.hitbox.width)
-                        end
-
-                        local frictionPerFrame = math.pow(WORLD.WATER_FRICTION, deltaTime)
-                        local toWallDashStrength = distanceToWallWereFacing * (1 - frictionPerFrame) / deltaTime
-
-                        local desiredBounceDistance = 4
-                        if command == 'u' or command == 'd' then
-                            desiredBounceDistance = 2*desiredBounceDistance
-                        end
-                        local extraForce = desiredBounceDistance * (1 - frictionPerFrame) / deltaTime
-
-                        dashStrength = toWallDashStrength + extraForce
-                    else
-                        dashStrength = JELLY.DASH_STRENGTH
+                    local desiredBounceDistance = 4
+                    if command == 'u' or command == 'd' then
+                        desiredBounceDistance = 2*desiredBounceDistance
                     end
+                    local extraForce = desiredBounceDistance * (1 - frictionPerFrame) / deltaTime
 
-                    -- Чтобы медуза меняла цвет. Геймджем, ничего не попишешь...
-                    local animationBonus = nextCommandBig and 3 or 0
+                    dashStrength = toWallDashStrength + extraForce
+                else
+                    dashStrength = JELLY.DASH_STRENGTH
+                end
 
-                    e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
+                -- Чтобы медуза меняла цвет. Геймджем, ничего не попишешь...
+                local animationBonus = nextCommandBig and 3 or 0
 
-                    if command == '.' then
-                        -- Чилим! 🍸
-                        if e.jelly.program:char(e.jelly.programIndex) ~= '.' then
-                            -- Похоже скоро будем дэшить
-                            if nextCommandBig then
-                                e.sprite.animation = 3 + 2
-                            else
-                                e.sprite.animation = 2
-                            end
+                e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
+
+                if command == '.' then
+                    -- Чилим! 🍸
+                    if e.jelly.program:char(e.jelly.programIndex) ~= '.' then
+                        -- Похоже скоро будем дэшить
+                        if nextCommandBig then
+                            e.sprite.animation = 3 + 2
                         else
-                            e.sprite.animation = 1 + animationBonus
+                            e.sprite.animation = 2
                         end
-                    elseif command == 'u' then
-                        e.rigidbody.velocity.y = dashStrength
-                        e.sprite.animation = 3 + animationBonus
-                    elseif command == 'd' then
-                        e.rigidbody.velocity.y = -1 * dashStrength
-                        e.sprite.animation = 3 + animationBonus
-                    elseif command == 'l' then
-                        e.rigidbody.velocity.x = -1 * dashStrength
-                        e.sprite.animation = 3 + animationBonus
-                    elseif command == 'r' then
-                        e.rigidbody.velocity.x = dashStrength
-                        e.sprite.animation = 3 + animationBonus
+                    else
+                        e.sprite.animation = 1 + animationBonus
                     end
-
-                    e.jelly.programTimer:restart() 
+                elseif command == 'u' then
+                    e.rigidbody.velocity.y = dashStrength
+                    e.sprite.animation = 3 + animationBonus
+                elseif command == 'd' then
+                    e.rigidbody.velocity.y = -1 * dashStrength
+                    e.sprite.animation = 3 + animationBonus
+                elseif command == 'l' then
+                    e.rigidbody.velocity.x = -1 * dashStrength
+                    e.sprite.animation = 3 + animationBonus
+                elseif command == 'r' then
+                    e.rigidbody.velocity.x = dashStrength
+                    e.sprite.animation = 3 + animationBonus
                 end
+
+                e.jelly.programTimer:restart() 
             end
         end
 
@@ -558,7 +537,7 @@ function Game:update()
             e.particles.system:update(deltaTime)
         end
 
-        if e.shader then
+        if e.waterSurface then
             if not e.shader.timer:elapsed() then
                 e.shader.timer:tick()
                 e.shader.shader:send('time', e.shader.timer:timeElapsed())
@@ -624,7 +603,6 @@ function Game:draw()
         local x, y = Camera:worldToView(e.position.x, e.position.y)
 
         if e.rectangle then
-            --print('oxygen: '..e.player.oxygen)
             if e.player then
                 if e.player.oxygen < PLAYER.OXYGEN / 3 then
                     love.graphics.setColor(COLOR.GAMEBOY.DARK)
@@ -635,10 +613,10 @@ function Game:draw()
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
 
-        if e.shader then
+        if e.waterSurface then
             love.graphics.setShader(e.shader.shader)
             love.graphics.setColor(COLOR.WHITE)
-            love.graphics.draw(e.sprite.spritesheet, x, y, 0, 5, 1)
+            love.graphics.draw(ASSETS.bluePixel, x, y, 0, e.waterSurface.width, e.waterSurface.height)
             love.graphics.setShader()
         end
 
