@@ -16,8 +16,25 @@ function Game:init()
     self:restart()
 end
 
-function unloopAnimation( ... )
-    -- body
+function update_hitbox_by_frame(e)
+    -- устанавливает хитбокс, соответствующий фрейму
+    assert(e.sprite)
+
+    local currentAnimation = e.sprite.animations[e.sprite.animation]
+    local currentFrameIndex = currentAnimation.position
+    local currentQuad = currentAnimation.frames[currentFrameIndex]
+    -- ПРЕДПОЛОГАЕТСЯ, что размер сетки одинаковый
+    -- в этом случае мы можем сделать так:
+    local x, y, w, h = currentQuad:getViewport()
+    local frame_x = math.floor(x / w) + 1
+    local frame_y = math.floor(y / h) + 1
+
+    if e.fish then
+        -- ⚠️ СНАЧАЛА идет y, потом x. извините
+        e.hitbox = box_map.to_hitbox(FISH.BOX_BY_FRAME[frame_y][frame_x])
+    elseif e.jelly then
+        -- 🅰️ здесь апдейтим хитбокс медузы по анимации
+    end
 end
 
 function Game:createDefaultPlayer()
@@ -26,10 +43,6 @@ function Game:createDefaultPlayer()
             x = PLAYER.SPAWN_X,
             y = PLAYER.SPAWN_Y,
         },
-        -- rectangle = {
-        --     width = 8,
-        --     height = 8,
-        -- },
         player = {
             oxygen = PLAYER.OXYGEN,
             jump = {
@@ -40,6 +53,8 @@ function Game:createDefaultPlayer()
             },
         },
         direction = 'right',
+
+        fish = {}, -- флаг
         sprite = {
             animation = 'right', -- Индекс текущей анимации
             animations = {
@@ -76,13 +91,21 @@ function Game:createDefaultPlayer()
                 y = 0,
             },
         },
-        hitbox = {
-            offset_x = 2,
-            offset_y = 2,
-            width = 5,
-            height = 4,
-        },
+        -- hitbox = {
+        --     offset_x = 2,
+        --     offset_y = 2,
+        --     width = 5,
+        --     height = 4,
+        -- },
     }
+
+    -- for _, row in ipairs(FISH.BOX_BY_FRAME) do
+    --     for _, box in ipairs(row) do
+    --         print(box.x1, box.y1, box.y1, box.y2)
+    --     end
+    --     print()
+    -- end
+    update_hitbox_by_frame(player)
 
     local jump_type = player.player.jump.bucket[1]
     player.player.jump.t = PLAYER.JUMP[jump_type].T
@@ -245,6 +268,10 @@ function Game:update()
                     e.sprite.animation = 2
                 end
             end
+        end
+
+        if e.player then
+            update_hitbox_by_frame(e)
         end
 
         if e.player then
