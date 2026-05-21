@@ -56,4 +56,5 @@ end
 
 
 function CountingTimer:reset()
+    self.duration = 0
 end

@@ -51,6 +51,8 @@ function Game:createDefaultPlayer()
                 i = 1,
                 t = 0,
             },
+            stunnedTimer = Timer:new(JELLY.STUN_TIME),
+            clickTillUnstunned = 0,
         },
         color = COLOR.RED,
         direction = 'right',
@@ -104,6 +106,7 @@ function Game:createDefaultPlayer()
         --     height = 4,
         -- },
     }
+    player.player.stunnedTimer:stop()
 
     -- for _, row in ipairs(FISH.BOX_BY_FRAME) do
     --     for _, box in ipairs(row) do
@@ -388,60 +391,81 @@ function Game:update()
                 end
             end
 
-            if self.debug.godmode or Map.isWater(tile) then
-                e.rigidbody.acceleration.y = 0
-                if Input.isDown(KEYBINDS.ACTION_UP) then
-                    e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
-                end
-                if Input.isDown(KEYBINDS.ACTION_DOWN) then
-                    e.rigidbody.acceleration.y = e.rigidbody.acceleration.y - PLAYER.WATER_ACCELERATION
-                end
+            e.player.stunnedTimer:tick()
+            e.rigidbody.acceleration.x = 0
+            e.rigidbody.acceleration.y = 0
 
-                e.rigidbody.acceleration.x = 0
-                if Input.isDown(KEYBINDS.ACTION_LEFT) then
-                    e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.WATER_ACCELERATION
-                end
-                if Input.isDown(KEYBINDS.ACTION_RIGHT) then
-                    e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.WATER_ACCELERATION
-                end
+            if e.player.clickTillUnstunned == 0 then
+                e.color = COLOR.RED
+                if self.debug.godmode or Map.isWater(tile) then
+                    if Input.isDown(KEYBINDS.ACTION_UP) then
+                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
+                    end
+                    if Input.isDown(KEYBINDS.ACTION_DOWN) then
+                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y - PLAYER.WATER_ACCELERATION
+                    end
 
-                if e.rigidbody.acceleration.x ~= 0 and e.rigidbody.acceleration.y ~= 0 then
-                    assert(math.abs(e.rigidbody.acceleration.x) == math.abs(e.rigidbody.acceleration.y))
-                    e.rigidbody.acceleration.x = e.rigidbody.acceleration.x / math.sqrt(2)
-                    e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
+                    if Input.isDown(KEYBINDS.ACTION_LEFT) then
+                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.WATER_ACCELERATION
+                    end
+                    if Input.isDown(KEYBINDS.ACTION_RIGHT) then
+                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.WATER_ACCELERATION
+                    end
+
+                    if e.rigidbody.acceleration.x ~= 0 and e.rigidbody.acceleration.y ~= 0 then
+                        assert(math.abs(e.rigidbody.acceleration.x) == math.abs(e.rigidbody.acceleration.y))
+                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x / math.sqrt(2)
+                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
+                    end
+                else
+
+                    local onGround = Physics.is_on_ground(e.position, e.hitbox)
+                    if onGround then -- автопрыжок только на земле
+                        e.player.jump.t = Time.tick(e.player.jump.t)
+                        if e.player.jump.t == 0 then
+                            -- прыжок
+                            local jump_type = e.player.jump.bucket[e.player.jump.i]
+                            e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
+
+                            if jump_type == 'high' then
+                                table.shuffle(e.player.jump.bucket)
+                                e.player.jump.i = 1
+                            else
+                                e.player.jump.i = e.player.jump.i + 1
+                                -- таймер на следующий прыжок
+                            end
+                            jump_type = e.player.jump.bucket[e.player.jump.i]
+                            e.player.jump.t = PLAYER.JUMP[jump_type].T
+                        end
+                    else -- горизонтальное перемещение только в воздухе
+                        if Input.isDown(KEYBINDS.ACTION_LEFT) then
+                            e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.GROUND_ACCELERATION
+                        end
+
+                        if Input.isDown(KEYBINDS.ACTION_RIGHT) then
+                            e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.GROUND_ACCELERATION
+                        end
+
+                    end
                 end
             else
-                e.rigidbody.acceleration.x = 0
-                e.rigidbody.acceleration.y = 0
-
-                local onGround = Physics.is_on_ground(e.position, e.hitbox)
-                if onGround then -- автопрыжок только на земле
-                    e.player.jump.t = Time.tick(e.player.jump.t)
-                    if e.player.jump.t == 0 then
-                        -- прыжок
-                        local jump_type = e.player.jump.bucket[e.player.jump.i]
-                        e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
-
-                        if jump_type == 'high' then
-                            table.shuffle(e.player.jump.bucket)
-                            e.player.jump.i = 1
-                        else
-                            e.player.jump.i = e.player.jump.i + 1
-                            -- таймер на следующий прыжок
-                        end
-                        jump_type = e.player.jump.bucket[e.player.jump.i]
-                        e.player.jump.t = PLAYER.JUMP[jump_type].T
-                    end
-                else -- горизонтальное перемещение только в воздухе
-                    if Input.isDown(KEYBINDS.ACTION_LEFT) then
-                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.GROUND_ACCELERATION
-                    end
-
-                    if Input.isDown(KEYBINDS.ACTION_RIGHT) then
-                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.GROUND_ACCELERATION
-                    end
-
+                local actionPressed = false
+                if Input.isJustPressed(KEYBINDS.ACTION_UP) then
+                    actionPressed = true
+                elseif Input.isJustPressed(KEYBINDS.ACTION_DOWN) then
+                    actionPressed = true
+                elseif Input.isJustPressed(KEYBINDS.ACTION_LEFT) then
+                    actionPressed = true
+                elseif Input.isJustPressed(KEYBINDS.ACTION_RIGHT) then
+                    actionPressed = true
                 end
+
+                if actionPressed then
+                    e.rigidbody.velocity.x = math.random(-20, 20)
+                    e.rigidbody.velocity.y = math.random(-20, 20)
+                    e.player.clickTillUnstunned = e.player.clickTillUnstunned - 1
+                end
+                e.color = COLOR.PURPLE
             end
         end
 
@@ -546,6 +570,19 @@ function Game:update()
         end
 
         if e.jelly then
+            local player = self.entityPool:get(self.handles.player)
+            if player then
+                local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
+                local ourRect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
+                if player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
+                    player.player.stunnedTimer:restart()
+                    player.player.clickTillUnstunned = PLAYER.CLICKS_TILL_UNSTUN
+                    local direction = normalize(player.position.x - e.position.x, e.position.y - player.position.y)
+                    player.rigidbody.velocity.x = direction.x * JELLY.KNOCKBACK
+                    player.rigidbody.velocity.y = direction.y * JELLY.KNOCKBACK
+                end
+            end
+
             e.jelly.programTimer:tick()
             if e.jelly.programTimer:elapsed() then
                 local command = e.jelly.program:char(e.jelly.programIndex)
