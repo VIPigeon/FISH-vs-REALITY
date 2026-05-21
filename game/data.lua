@@ -137,8 +137,12 @@ is_nose_flattened — сплющен ли нос
 JELLY = {
     DASH_STRENGTH = 60,
     BIG_DASH_STRENGTH = 120,
+    -- TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
+
+    TIME_PER_FRAME = 0.07,
+    BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),
 }
 
 WORLD = {
@@ -180,14 +184,14 @@ function ASSETS:loadAll()
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
-    local jellyGrid = anim8.newGrid(8, 16, self.jellySpritesheet:getPixelWidth(), self.jellySpritesheet:getPixelHeight())
-    self.jellyIdleAnimation = anim8.newAnimation(jellyGrid('1-2', 1), 0.5)
-    self.jellyPrepareAnimation = anim8.newAnimation(jellyGrid(3, 1), 1)
-    self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
+    self.jellyGrid = anim8.newGrid(16, 16, self.jellySpritesheet:getPixelWidth(), self.jellySpritesheet:getPixelHeight())
+    -- self.jellyIdleAnimation = anim8.newAnimation(jellyGrid('1-2', 1), 0.5)
+    -- self.jellyPrepareAnimation = anim8.newAnimation(jellyGrid(3, 1), 1)
+    -- self.jellyDashAnimation = anim8.newAnimation(jellyGrid(4, 1), 1)
 
-    self.jellyPinkIdleAnimation = anim8.newAnimation(jellyGrid('5-6', 1), 0.5)
-    self.jellyPinkPrepareAnimation = anim8.newAnimation(jellyGrid(7, 1), 1)
-    self.jellyPinkDashAnimation = anim8.newAnimation(jellyGrid(8, 1), 1)
+    -- self.jellyPinkIdleAnimation = anim8.newAnimation(jellyGrid('5-6', 1), 0.5)
+    -- self.jellyPinkPrepareAnimation = anim8.newAnimation(jellyGrid(7, 1), 1)
+    -- self.jellyPinkDashAnimation = anim8.newAnimation(jellyGrid(8, 1), 1)
 
     self.fishGrid = anim8.newGrid(16, 16, self.fishSpritesheet:getPixelWidth(), self.fishSpritesheet:getPixelHeight())
     -- self.fishIdleAnimation = anim8.newAnimation(fishGrid(1, 1), 1)

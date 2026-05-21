@@ -33,7 +33,7 @@ function update_hitbox_by_frame(e)
         -- ⚠️ СНАЧАЛА идет y, потом x. извините
         e.hitbox = box_map.to_hitbox(FISH.BOX_BY_FRAME[frame_y][frame_x])
     elseif e.jelly then
-        -- 🅰️ здесь апдейтим хитбокс медузы по анимации
+        e.hitbox = box_map.to_hitbox(JELLY.BOX_BY_FRAME[frame_y][frame_x])
     end
 end
 
@@ -152,14 +152,23 @@ function Game:restart()
             height = 8,
         },
         sprite = {
-            animation = 1, -- Индекс текущей анимации
+            animation = 'up_release', -- Индекс текущей анимации
             animations = {
-                ASSETS.jellyIdleAnimation:clone(),
-                ASSETS.jellyPrepareAnimation:clone(),
-                ASSETS.jellyDashAnimation:clone(),
-                ASSETS.jellyPinkIdleAnimation:clone(),
-                ASSETS.jellyPinkPrepareAnimation:clone(),
-                ASSETS.jellyPinkDashAnimation:clone(),
+                up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
             },
             spritesheet = ASSETS.jellySpritesheet,
         },
@@ -268,6 +277,13 @@ function Game:respawnPlayer()
 end
 
 
+-- TODO: перенести в адекватное место
+function reloadAnimation(e)
+    e.sprite.animations[e.sprite.animation]:gotoFrame(1)
+    e.sprite.animations[e.sprite.animation]:resume()
+end
+
+
 function Game:update()
     local deltaTime = love.timer.getDelta()
 
@@ -292,7 +308,7 @@ function Game:update()
             end
         end
 
-        if e.player then
+        if e.player or e.jelly then
             update_hitbox_by_frame(e)
         end
 
@@ -326,8 +342,9 @@ function Game:update()
             if direction then
                 if direction ~= e.direction then
                     e.sprite.animation = tostring(e.direction)..'2'..tostring(direction)
-                    e.sprite.animations[e.sprite.animation]:gotoFrame(1)
-                    e.sprite.animations[e.sprite.animation]:resume()
+                    reloadAnimation(e)
+                    -- e.sprite.animations[e.sprite.animation]:gotoFrame(1)
+                    -- e.sprite.animations[e.sprite.animation]:resume()
                     e.direction = direction
                 end
             end
@@ -581,30 +598,46 @@ function Game:update()
 
                 e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
 
+                local prev_animation = e.sprite.animation
                 if command == '.' then
-                    -- Чилим! 🍸
-                    if e.jelly.program:char(e.jelly.programIndex) ~= '.' then
-                        -- Похоже скоро будем дэшить
-                        if nextCommandBig then
-                            e.sprite.animation = 3 + 2
-                        else
-                            e.sprite.animation = 2
-                        end
+                    -- похоже скоро будем дэшить
+                    local next_tic = e.jelly.program:char(e.jelly.programIndex)
+                    if next_tic == 'u' then
+                        e.sprite.animation = 'up_prepare'
+                    elseif next_tic == 'd' then
+                        e.sprite.animation = 'down_prepare'
+                    elseif next_tic == 'l' then
+                        e.sprite.animation = 'left_prepare'
+                    elseif next_tic == 'r' then
+                        e.sprite.animation = 'right_prepare'
                     else
-                        e.sprite.animation = 1 + animationBonus
+                        -- Чилим! 🍸
+                        if nextCommand == 'u' then
+                            e.sprite.animation = 'up_release'
+                        elseif nextCommand == 'd' then
+                            e.sprite.animation = 'down_release'
+                        elseif nextCommand == 'l' then
+                            e.sprite.animation = 'left_release'
+                        elseif nextCommand == 'r' then
+                            e.sprite.animation = 'right_release'
+                        end
                     end
                 elseif command == 'u' then
                     e.rigidbody.velocity.y = dashStrength
-                    e.sprite.animation = 3 + animationBonus
+                    e.sprite.animation = 'up_dash'
                 elseif command == 'd' then
                     e.rigidbody.velocity.y = -1 * dashStrength
-                    e.sprite.animation = 3 + animationBonus
+                    e.sprite.animation = 'down_dash'
                 elseif command == 'l' then
                     e.rigidbody.velocity.x = -1 * dashStrength
-                    e.sprite.animation = 3 + animationBonus
+                    e.sprite.animation = 'left_dash'
                 elseif command == 'r' then
                     e.rigidbody.velocity.x = dashStrength
-                    e.sprite.animation = 3 + animationBonus
+                    e.sprite.animation = 'right_dash'
+                end
+
+                if e.sprite.animation ~= prev_animation then
+                    reloadAnimation(e)
                 end
 
                 e.jelly.programTimer:restart() 
@@ -702,19 +735,20 @@ function Game:draw()
         if e.sprite and not e.shader then
             local animation = e.sprite.animations[e.sprite.animation]
             local w, h = animation:getDimensions()
-            if e.sprite.rotation then
-                if e.sprite.rotation == ROTATE_RIGHT then
-                    x = x + w
-                    y = y
-                elseif e.sprite.rotation == ROTATE_LEFT then
-                    x = x
-                    y = y + h / 2
-                elseif e.sprite.rotation == ROTATE_180 then
-                    x = x + w
-                    y = y + h / 2
-                end
-            end
-            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
+            -- if e.sprite.rotation then
+            --     if e.sprite.rotation == ROTATE_RIGHT then
+            --         x = x + w
+            --         y = y
+            --     elseif e.sprite.rotation == ROTATE_LEFT then
+            --         x = x
+            --         y = y + h / 2
+            --     elseif e.sprite.rotation == ROTATE_180 then
+            --         x = x + w
+            --         y = y + h / 2
+            --     end
+            -- end
+            -- animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
+            animation:draw(e.sprite.spritesheet, x, y)
         end
 
         if e.particles then
