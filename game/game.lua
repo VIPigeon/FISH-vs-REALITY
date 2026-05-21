@@ -548,12 +548,11 @@ function Game:update()
             if (e.player and self.debug.godmode) or Map.isWater(tile) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
-                    --if math.abs(e.rigidbody.velocity.x) < 75 then
-                    --    e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
-                    --else
-                    --    e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
-                    --end
+                    if math.abs(e.rigidbody.velocity.x) < 75 then
+                        e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
+                    else
+                        e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
+                    end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -792,18 +791,33 @@ function Game:update()
 
     self.entityPool:foreach(function(e, ref)
         if e.player or e.jelly then
-            local oldWidth = e.hitbox.offset_x
-            local oldHeight = e.hitbox.offset_y
-            local oldPosition = { x = e.position.x + e.hitbox.offset_x, y = e.position.y + e.hitbox.offset_y }
 
             update_hitbox_by_frame(e)
 
-            local current_rect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
-            local collision = Physics.check_collision_rect_tilemap(current_rect)
-            if collision ~= nil then
-                Physics.try_to_unstuck_rigidbody(oldPosition, e.hitbox)
-                e.position.x = oldPosition.x - e.hitbox.offset_x
-                e.position.y = oldPosition.y - e.hitbox.offset_y
+            iteration = 0
+            while iteration < 10 do
+                local current_rect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
+                local collision = Physics.check_collision_rect_tilemap(current_rect)
+
+                if collision ~= nil then
+                    local left = e.position.x + e.hitbox.offset_x
+                    local right = left + e.hitbox.width
+                    local top = e.position.y + e.hitbox.offset_y
+                    local bottom = top + e.hitbox.height
+                    if right > collision.x and left < collision.x then
+                        e.position.x = collision.x - e.hitbox.width - e.hitbox.offset_x
+                    elseif right > collision.x + 8 and left < collision.x + 8 then
+                        e.position.x = collision.x + 8 - e.hitbox.offset_x
+                    elseif bottom > e.position.y and top < collision.y then
+                        e.position.y = collision.y - e.hitbox.height - e.hitbox.offset_y
+                    elseif bottom > collision.y + 8 and top < collision.y + 8 then
+                        e.position.y = collision.y + 8 - e.hitbox.offset_y
+                    end
+                else
+                    break
+                end
+
+                iteration = iteration + 1
             end
         end
     end)
