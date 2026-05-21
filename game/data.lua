@@ -179,7 +179,7 @@ JELLY = {
 }
 
 function JELLY.prepare_spawn_points()
-    for _, program in pairs(JELLY.programs) do
+    for _, program in pairs(JELLY.spawn_points) do
         program.up = program.down - 16
         program.left = program.down - 1
         program.right = program.down + 1

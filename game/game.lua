@@ -15,8 +15,9 @@ function Game:init()
         shotHitboxes = false,
     }
 
-    self:init_spawn_points()
     self:restart()
+
+    self:init_spawn_points() -- что
 end
 
 function update_hitbox_by_frame(e)
@@ -174,8 +175,8 @@ end
 function Game:spawn_jelly_if_can(x, y)
     local tile = Map.get(x, y, 'spawn')
 
-    for _, program_type in pairs(JELLY.spawn_points) do
-        for direction, tile_id in pairs(program_type) do
+    for program_type, tile_ids in pairs(JELLY.spawn_points) do
+        for direction, tile_id in pairs(tile_ids) do
             if tile_id == tile then
                 return self:spawn_jelly(program_type, direction)
             end
@@ -186,17 +187,15 @@ end
 
 
 function Game:init_spawn_points()
-    self.jellies = {}
     for x = 0, Map.spawn.width - 1 do
         for y = 0, Map.spawn.height - 1 do
             local jelly = self:spawn_jelly_if_can(x, y)
             if jelly then
-                table.insert(self.jellies, jelly)
+                table.insert(self.entityPool, jelly)
             end
         end
     end
 end
-
 
 function Game:restart()
     math.randomseed(os.time()*1e7)
@@ -272,10 +271,10 @@ function Game:restart()
     --     },
     -- }
 
-    local jelly2 = table.deepcopy(jelly)
-    jelly2.position.x = 240
-    jelly2.position.y = 80
-    jelly2.jelly.program = 'lr'
+    -- local jelly2 = table.deepcopy(jelly)
+    -- jelly2.position.x = 240
+    -- jelly2.position.y = 80
+    -- jelly2.jelly.program = 'lr'
 
     local checkpointSprite = {
         animation = 1,
