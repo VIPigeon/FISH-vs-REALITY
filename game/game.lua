@@ -606,7 +606,8 @@ function Game:update()
                 if nextCommandBig then
                     e.color = COLOR.LIGHT_RED
                 else
-                    e.color = COLOR.LIGHT
+                    -- e.color = COLOR.LIGHT
+                    e.color = COLOR.BRIGHTEST
                 end
 
                 e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
