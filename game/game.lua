@@ -378,6 +378,16 @@ function Game:update()
                 self:killPlayer()
             end
 
+            if e.player.clickTillUnstunned ~= 0 then
+                e.color = COLOR.PURPLE
+            elseif e.player.oxygen < PLAYER.OXYGEN / 4 then
+                e.color = COLOR.BLUE
+            elseif e.player.oxygen < PLAYER.OXYGEN / 2 then
+                e.color = COLOR.LIGHT_BLUE
+            else
+                e.color = COLOR.RED
+            end
+
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
@@ -396,7 +406,6 @@ function Game:update()
             e.rigidbody.acceleration.y = 0
 
             if e.player.clickTillUnstunned == 0 then
-                e.color = COLOR.RED
                 if self.debug.godmode or Map.isWater(tile) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
@@ -465,7 +474,6 @@ function Game:update()
                     e.rigidbody.velocity.y = math.random(-20, 20)
                     e.player.clickTillUnstunned = e.player.clickTillUnstunned - 1
                 end
-                e.color = COLOR.PURPLE
             end
         end
 
@@ -763,9 +771,6 @@ function Game:draw()
         player, ok = self.entityPool:get(self.handles.playerDeadBody)
         assert(ok)
     end
-    --Camera.x = player.position.x
-    -- Camera.y = player.position.y
-    --Camera.y = PLAYER.SPAWN_Y
 
     local left, top = Camera.x, Camera.y
     local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
@@ -838,13 +843,6 @@ function Game:draw()
         local x, y = e.position.x, e.position.y
 
         if e.rectangle then
-            if e.player then
-                if e.player.oxygen < PLAYER.OXYGEN / 3 then
-                    love.graphics.setColor(COLOR.GAMEBOY.DARK)
-                else
-                    love.graphics.setColor(COLOR.GAMEBOY.NEUTRAL)
-                end
-            end
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
 
