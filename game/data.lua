@@ -7,6 +7,12 @@ SCREEN = {
     HEIGHT = 136,
 }
 
+CAMERA = {
+    DEAD_ZONE_X = 16,
+    DEAD_ZONE_Y = 9,
+    SMOOTHING = 0.1,
+}
+
 
 -- Цвет в формате {r, g, b, a (optional)}
 -- https://love2d.org/wiki/love.graphics.setColor
@@ -137,6 +143,21 @@ is_lying — лежит ли рыба
 is_nose_flattened — сплющен ли нос
 ]]
 
+JELLY_PROGRAMS = {
+    common = '..d..l..u..r',
+}
+JELLY_programIndex = {
+    common = {
+        down = 3,
+        left = 6,
+        up = 9,
+        right = 12,
+    },
+}
+JELLY_programTimer = {
+    common = TICK_FREQUENCY, -- временно
+}
+
 JELLY = {
     DASH_STRENGTH = 60,
     BIG_DASH_STRENGTH = 120,
@@ -150,13 +171,19 @@ JELLY = {
     TIME_PER_FRAME = 0.07,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),
 
-    programs = {
-        common = down = 177,
+    spawn_points = {
+        common = {
+            down = 177,
+        },
     },
 }
 
-function JELLY.load_programs()
-    -- for
+function JELLY.prepare_spawn_points()
+    for _, program in pairs(JELLY.programs) do
+        program.up = program.down - 16
+        program.left = program.down - 1
+        program.right = program.down + 1
+    end
 end
 
 

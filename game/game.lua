@@ -3,6 +3,8 @@ Game = {}
 function Game:init()
     -- Находится в Data
     ASSETS:loadAll()
+    JELLY.prepare_spawn_points()
+    --
 
     Camera:init()
     Input.init()
@@ -13,6 +15,7 @@ function Game:init()
         shotHitboxes = false,
     }
 
+    self:init_spawn_points()
     self:restart()
 end
 
@@ -124,10 +127,74 @@ function Game:createDefaultPlayer()
 end
 
 
-function Game:spawn_jelly_if_can(x, y)
-    local jelly = Map.get(x, y)
+function Game:spawn_jelly(program_type, direction)
+    local jelly = {
+        position = { x = 32, y = 80 },
+        rigidbody = {
+            velocity = { x = 0, y = 0 },
+            acceleration = { x = 0, y = 0 },
+        },
+        hitbox = {
+            offset_x = 0,
+            offset_y = 0,
+            width = 8,
+            height = 8,
+        },
+        color = COLOR.BRIGHTEST,
+        sprite = {
+            animation = tostring(direction)..'_release', -- Индекс текущей анимации
+            animations = {
+                up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-    if jelly == 
+                right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+            },
+            spritesheet = ASSETS.jellySpritesheet,
+        },
+        jelly = {
+            program = JELLY_PROGRAMS[program_type],
+            programTimer = Timer:new(JELLY_programTimer[program_type]),
+            programIndex = JELLY_programIndex[program_type][direction],
+        },
+    }
+    return jelly
+end
+
+function Game:spawn_jelly_if_can(x, y)
+    local tile = Map.get(x, y, 'spawn')
+
+    for _, program_type in pairs(JELLY.spawn_points) do
+        for direction, tile_id in pairs(program_type) do
+            if tile_id == tile then
+                return self:spawn_jelly(program_type, direction)
+            end
+        end
+    end
+    return false
+end
+
+
+function Game:init_spawn_points()
+    self.jellies = {}
+    for x = 0, Map.spawn.width - 1 do
+        for y = 0, Map.spawn.height - 1 do
+            local jelly = self:spawn_jelly_if_can(x, y)
+            if jelly then
+                table.insert(self.jellies, jelly)
+            end
+        end
+    end
 end
 
 
@@ -164,46 +231,46 @@ function Game:restart()
         },
     }
 
-    local jelly = {
-        position = { x = 32, y = 80 },
-        rigidbody = {
-            velocity = { x = 0, y = 0 },
-            acceleration = { x = 0, y = 0 },
-        },
-        hitbox = {
-            offset_x = 0,
-            offset_y = 0,
-            width = 8,
-            height = 8,
-        },
-        color = COLOR.BRIGHTEST,
-        sprite = {
-            animation = 'up_release', -- Индекс текущей анимации
-            animations = {
-                up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    -- local jelly = {
+    --     position = { x = 32, y = 80 },
+    --     rigidbody = {
+    --         velocity = { x = 0, y = 0 },
+    --         acceleration = { x = 0, y = 0 },
+    --     },
+    --     hitbox = {
+    --         offset_x = 0,
+    --         offset_y = 0,
+    --         width = 8,
+    --         height = 8,
+    --     },
+    --     color = COLOR.BRIGHTEST,
+    --     sprite = {
+    --         animation = 'up_release', -- Индекс текущей анимации
+    --         animations = {
+    --             up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-            },
-            spritesheet = ASSETS.jellySpritesheet,
-        },
-        jelly = {
-            program = '..d..R..u....L',
-            programTimer = Timer:new(JELLY.TICK_FREQUENCY),
-            programIndex = 1,
-        },
-    }
+    --             left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --         },
+    --         spritesheet = ASSETS.jellySpritesheet,
+    --     },
+    --     jelly = {
+    --         program = '..d..R..u....L',
+    --         programTimer = Timer:new(JELLY.TICK_FREQUENCY),
+    --         programIndex = 1,
+    --     },
+    -- }
 
     local jelly2 = table.deepcopy(jelly)
     jelly2.position.x = 240
@@ -742,24 +809,27 @@ function Game:update()
         end
     end)
 
+    local player = self.entityPool:get(self.handles.player)
+    if player then
+        Camera:update(player.position, deltaTime)
+    end
 end
 
 
 function Game:draw()
-    love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
-    love.graphics.setColor(COLOR.WHITE)
+    Camera:beginDraw()
 
     local player, ok = self.entityPool:get(self.handles.player)
     if not ok then
         player, ok = self.entityPool:get(self.handles.playerDeadBody)
         assert(ok)
     end
-    Camera.x = player.position.x
+    --Camera.x = player.position.x
     -- Camera.y = player.position.y
-    Camera.y = PLAYER.SPAWN_Y
+    --Camera.y = PLAYER.SPAWN_Y
 
-    local left, top = Camera.x - SCREEN.WIDTH / 2, Camera.y - SCREEN.HEIGHT / 2
-    local right, bot = Camera.x + SCREEN.WIDTH / 2, Camera.y + SCREEN.HEIGHT / 2
+    local left, top = Camera.x, Camera.y
+    local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
 
     left  = math.floor(left / 8) - 1
     right = math.floor(right / 8) + 1
@@ -770,7 +840,7 @@ function Game:draw()
         for x = left, right do
             local tileId = Map.get(x, y)
             local quad = self.getTileQuad(tileId)
-            local tx, ty = Camera:worldToView(8*x, 8*y)
+            local tx, ty = 8*x, 8*y
             love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
         end
     end
@@ -780,7 +850,7 @@ function Game:draw()
             return
         end
 
-        local x, y = Camera:worldToView(e.position.x, e.position.y)
+        local x, y = e.position.x, e.position.y
         if e.water then
             if e.water.surface then
                 e.water.shader:send('y', e.position.y + 8)
@@ -826,7 +896,7 @@ function Game:draw()
             return
         end
 
-        local x, y = Camera:worldToView(e.position.x, e.position.y)
+        local x, y = e.position.x, e.position.y
 
         if e.rectangle then
             if e.player then
@@ -855,6 +925,8 @@ function Game:draw()
             love.graphics.setColor(COLOR.WHITE)
         end
     end)
+
+    Camera:endDraw()
 end
 
 
