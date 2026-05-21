@@ -145,6 +145,7 @@ is_nose_flattened — сплющен ли нос
 
 JELLY_PROGRAMS = {
     common = '..d..l..u..r',
+    -- common = '............',
 }
 JELLY_programIndex = {
     common = {
@@ -155,7 +156,7 @@ JELLY_programIndex = {
     },
 }
 JELLY_programTimer = {
-    common = TICK_FREQUENCY, -- временно
+    common = 0.5, -- временно
 }
 
 JELLY = {

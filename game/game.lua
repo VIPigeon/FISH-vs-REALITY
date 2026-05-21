@@ -16,8 +16,6 @@ function Game:init()
     }
 
     self:restart()
-
-    self:init_spawn_points() -- что
 end
 
 function update_hitbox_by_frame(e)
@@ -128,9 +126,9 @@ function Game:createDefaultPlayer()
 end
 
 
-function Game:spawn_jelly(program_type, direction)
+function Game:spawn_jelly(x, y, program_type, direction)
     local jelly = {
-        position = { x = 32, y = 80 },
+        position = { x = x-5, y = y-5 },
         rigidbody = {
             velocity = { x = 0, y = 0 },
             acceleration = { x = 0, y = 0 },
@@ -178,7 +176,7 @@ function Game:spawn_jelly_if_can(x, y)
     for program_type, tile_ids in pairs(JELLY.spawn_points) do
         for direction, tile_id in pairs(tile_ids) do
             if tile_id == tile then
-                return self:spawn_jelly(program_type, direction)
+                return self:spawn_jelly(x*8, y*8, program_type, direction)
             end
         end
     end
@@ -191,7 +189,7 @@ function Game:init_spawn_points()
         for y = 0, Map.spawn.height - 1 do
             local jelly = self:spawn_jelly_if_can(x, y)
             if jelly then
-                table.insert(self.entityPool, jelly)
+                self.entityPool:put(jelly)
             end
         end
     end
@@ -318,6 +316,8 @@ function Game:restart()
     table.insert(self.handles.water, self.entityPool:put(water))
     table.insert(self.handles.water, self.entityPool:put(water2))
     self.handles.player = self.entityPool:put(player)
+
+    self:init_spawn_points()
 end
 
 
