@@ -734,24 +734,27 @@ function Game:update()
         end
     end)
 
+    local player = self.entityPool:get(self.handles.player)
+    if player then
+        Camera:update(player.position, deltaTime)
+    end
 end
 
 
 function Game:draw()
-    love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
-    love.graphics.setColor(COLOR.WHITE)
+    Camera:beginDraw()
 
     local player, ok = self.entityPool:get(self.handles.player)
     if not ok then
         player, ok = self.entityPool:get(self.handles.playerDeadBody)
         assert(ok)
     end
-    Camera.x = player.position.x
+    --Camera.x = player.position.x
     -- Camera.y = player.position.y
-    Camera.y = PLAYER.SPAWN_Y
+    --Camera.y = PLAYER.SPAWN_Y
 
-    local left, top = Camera.x - SCREEN.WIDTH / 2, Camera.y - SCREEN.HEIGHT / 2
-    local right, bot = Camera.x + SCREEN.WIDTH / 2, Camera.y + SCREEN.HEIGHT / 2
+    local left, top = Camera.x, Camera.y
+    local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
 
     left  = math.floor(left / 8) - 1
     right = math.floor(right / 8) + 1
@@ -762,7 +765,7 @@ function Game:draw()
         for x = left, right do
             local tileId = Map.get(x, y)
             local quad = self.getTileQuad(tileId)
-            local tx, ty = Camera:worldToView(8*x, 8*y)
+            local tx, ty = 8*x, 8*y
             love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
         end
     end
@@ -772,7 +775,7 @@ function Game:draw()
             return
         end
 
-        local x, y = Camera:worldToView(e.position.x, e.position.y)
+        local x, y = e.position.x, e.position.y
         if e.water then
             if e.water.surface then
                 e.water.shader:send('y', e.position.y + 8)
@@ -818,7 +821,7 @@ function Game:draw()
             return
         end
 
-        local x, y = Camera:worldToView(e.position.x, e.position.y)
+        local x, y = e.position.x, e.position.y
 
         if e.rectangle then
             if e.player then
@@ -847,6 +850,8 @@ function Game:draw()
             love.graphics.setColor(COLOR.WHITE)
         end
     end)
+
+    Camera:endDraw()
 end
 
 

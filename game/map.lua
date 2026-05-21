@@ -3,8 +3,8 @@ Map = {}
 function Map.init(tilemap)
     Map.tilemap = tilemap
     Map.terrain = tilemap.layers[1]
+    Map.spawn = tilemap.layers[2]
 end
-
 
 function Map.get(tileX, tileY)
     if 0 <= tileX and tileX < Map.terrain.width and 0 <= tileY and tileY < Map.terrain.height then

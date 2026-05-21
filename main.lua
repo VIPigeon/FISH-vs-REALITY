@@ -39,9 +39,7 @@ end
 
 
 function love.draw()
-    love.graphics.setCanvas(Camera.canvas)
     Game:draw()
-    love.graphics.setCanvas()
 
     love.graphics.clear(COLOR.BLACK)
 

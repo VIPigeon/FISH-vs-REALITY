@@ -7,6 +7,12 @@ SCREEN = {
     HEIGHT = 136,
 }
 
+CAMERA = {
+    DEAD_ZONE_X = 16,
+    DEAD_ZONE_Y = 9,
+    SMOOTHING = 0.1,
+}
+
 
 -- Цвет в формате {r, g, b, a (optional)}
 -- https://love2d.org/wiki/love.graphics.setColor
