@@ -109,6 +109,8 @@ PLAYER = {
 FISH = {
     TIME_PER_FRAME = 0.04,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/fish_hitboxes.png'),
+
+    AGONY_TIME_PER_FRAME = 0.081,
 }
 
 -- компонент для анимации рыбы
