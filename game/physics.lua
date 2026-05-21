@@ -66,22 +66,19 @@ end
 function Physics.move_x(position, hitbox, delta)
     local next_x = position.x + delta
 
-    local rect_after_x_move = Rect.combine(
-        Hitbox.to_rect(hitbox, position.x, position.y),
-        Hitbox.to_rect(hitbox, next_x, position.y)
-    )
+    local rect_after_x_move = Hitbox.to_rect(hitbox, next_x, position.y)
 
     local tilemap_collision = Physics.check_collision_rect_tilemap(rect_after_x_move)
     if tilemap_collision ~= nil then
-        local moving_right = delta > 0
-        if moving_right then
-            next_x = tilemap_collision.x - hitbox.width - hitbox.offset_x
-        else
+        local left = next_x + hitbox.offset_x
+        local right = left + hitbox.width
+        if right > 8 + tilemap_collision.x and left < 8 + tilemap_collision.x then
             next_x = tilemap_collision.x + 8 - hitbox.offset_x
+        else
+            next_x = tilemap_collision.x - hitbox.width - hitbox.offset_x
         end
     end
 
-    next_x = lume.clamp(next_x, -hitbox.offset_x, WORLD.WIDTH + hitbox.width)
     position.x = next_x
 
     return tilemap_collision
@@ -96,22 +93,19 @@ function Physics.move_y(position, hitbox, delta)
     -- Отсюда минус в этой формуле (В move_x такого нет)
     local next_y = position.y - delta
 
-    local rect_after_y_move = Rect.combine(
-        Hitbox.to_rect(hitbox, position.x, position.y),
-        Hitbox.to_rect(hitbox, position.x, next_y)
-    )
+    local rect_after_y_move = Hitbox.to_rect(hitbox, position.x, next_y)
 
     local tilemap_collision = Physics.check_collision_rect_tilemap(rect_after_y_move)
     if tilemap_collision ~= nil then
-        local flying_down = delta < 0
-        if flying_down then
-            next_y = tilemap_collision.y - hitbox.height - hitbox.offset_y
-        else
+        local top = next_y + hitbox.offset_y
+        local bottom = top + hitbox.height
+        if bottom > 8 + tilemap_collision.y and top < 8 + tilemap_collision.y then
             next_y = tilemap_collision.y + 8 - hitbox.offset_y
+        else
+            next_y = tilemap_collision.y - hitbox.height - hitbox.offset_y
         end
     end
 
-    next_y = lume.clamp(next_y, 0, WORLD.HEIGHT)
     position.y = next_y
 
     return tilemap_collision
@@ -196,9 +190,6 @@ function Physics.try_to_unstuck_rigidbody(position, hitbox)
 
     local radius = 1
     while radius < 10 do
-        -- В каждой итерации проходимся по квадрату тайлов вокруг застявшего с
-        -- размером стороны radius.
-
         for dy = -radius, radius do
             new_rect.x = originalPositionX - radius
             new_rect.y = originalPositionY + dy

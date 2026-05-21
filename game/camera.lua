@@ -4,8 +4,11 @@ function Camera:init()
     self.x = 0
     self.y = 0
 
-    self.smoothing = 0.1
-    self.dead_zone = {x = 16, y = 9}
+    self.smoothing = CAMERA.SMOOTHING
+    self.dead_zone = {
+        x = CAMERA.DEAD_ZONE_X,
+        y = CAMERA.DEAD_ZONE_Y,
+    }
 
     self.offset_x = 0
     self.offset_y = 0
