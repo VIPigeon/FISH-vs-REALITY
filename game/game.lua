@@ -169,7 +169,7 @@ function Game:restart()
             width = 8,
             height = 8,
         },
-        color = COLOR.BRIGHTEST,
+        color = COLOR.LIGHT_RED,
         sprite = {
             animation = 'up_release', -- Индекс текущей анимации
             animations = {
@@ -589,12 +589,18 @@ function Game:update()
                 command = command:lower()
 
                 local nextCommandIndex = e.jelly.programIndex
+                moduloIncrement(nextCommandIndex, e.jelly.program:len())
                 while e.jelly.program:char(nextCommandIndex) == '.' do
                     nextCommandIndex = moduloIncrement(nextCommandIndex, e.jelly.program:len())
                 end
 
                 local nextCommand = e.jelly.program:char(nextCommandIndex)
-                local nextCommandBig = isUpper(nextCommand)
+                local nextCommandBig = nextCommand ~= '.' and isUpper(nextCommand)
+                if nextCommandBig then
+                    e.color = COLOR.LIGHT_RED
+                else
+                    e.color = COLOR.BRIGHTEST
+                end
                 nextCommand = nextCommand:lower()
 
                 local directions = {
@@ -637,12 +643,6 @@ function Game:update()
                     dashStrength = toWallDashStrength + extraForce
                 else
                     dashStrength = JELLY.DASH_STRENGTH
-                end
-
-                if nextCommandBig then
-                    e.color = COLOR.LIGHT_RED
-                else
-                    e.color = COLOR.LIGHT
                 end
 
                 e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
