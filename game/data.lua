@@ -149,7 +149,17 @@ JELLY = {
 
     TIME_PER_FRAME = 0.07,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),
+
+    programs = {
+        common = down = 177,
+    },
 }
+
+function JELLY.load_programs()
+    -- for
+end
+
+
 
 WORLD = {
     WIDTH = 999,

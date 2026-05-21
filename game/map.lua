@@ -3,6 +3,7 @@ Map = {}
 function Map.init(tilemap)
     Map.tilemap = tilemap
     Map.terrain = tilemap.layers[1]
+    Map.enemies = tilemap.enemies[2]  -- jelly
 end
 
 

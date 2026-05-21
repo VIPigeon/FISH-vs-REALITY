@@ -124,6 +124,13 @@ function Game:createDefaultPlayer()
 end
 
 
+function Game:spawn_jelly_if_can(x, y)
+    local jelly = Map.get(x, y)
+
+    if jelly == 
+end
+
+
 function Game:restart()
     math.randomseed(os.time()*1e7)
 
