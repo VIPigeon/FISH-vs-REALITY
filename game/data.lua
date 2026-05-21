@@ -44,7 +44,6 @@ for k, v in pairs(KEYBINDS) do
     KEYBINDS[k].name = string.lower(k)
 end
 
-
 TRANSITION = {
     NIL = 0,
     LAND_TO_WATER = 1,
@@ -77,6 +76,7 @@ PLAYER = {
         short = {T=0, F=1500 * 1.8 * 0.016},
         middle = {T=0.2, F=2400 * 1.8 * 0.016},
         high = {T=0.2, F=4400 * 1.2 * 0.016},
+
         BUCKET = {
             'short',
             'short',
@@ -105,6 +105,34 @@ PLAYER = {
     OXYGEN = 15, -- время жизни без воды (секунды)
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
 }
+
+FISH = {
+    TIME_PER_FRAME = 0.04,
+    BOX_BY_FRAME = box_map.get_boxes_from_image('content/fish_hitboxes.png'),
+}
+
+-- компонент для анимации рыбы
+--[[
+rotate:
+    3
+    ^
+ 2 < > 0
+    v
+    1
+
+tail:
+  -1
+ 0 <(((*>
+  +1
+
+Аналогично с head:
+    -1
+<(((*> 0
+    +1
+
+is_lying — лежит ли рыба
+is_nose_flattened — сплющен ли нос
+]]
 
 JELLY = {
     DASH_STRENGTH = 60,
@@ -143,6 +171,7 @@ ASSETS = {}
 
 function ASSETS:loadAll()
     self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
+    self.fishSpritesheet = love.graphics.newImage('content/fish.png')
     self.checkpointSpritesheet = love.graphics.newImage('content/checkpoint.png')
     self.testTexture = love.graphics.newImage('content/testTexture.png')
     self.whiteSquare2x2 = love.graphics.newImage('content/whiteSquare2x2.png')
@@ -159,6 +188,15 @@ function ASSETS:loadAll()
     self.jellyPinkIdleAnimation = anim8.newAnimation(jellyGrid('5-6', 1), 0.5)
     self.jellyPinkPrepareAnimation = anim8.newAnimation(jellyGrid(7, 1), 1)
     self.jellyPinkDashAnimation = anim8.newAnimation(jellyGrid(8, 1), 1)
+
+    self.fishGrid = anim8.newGrid(16, 16, self.fishSpritesheet:getPixelWidth(), self.fishSpritesheet:getPixelHeight())
+    -- self.fishIdleAnimation = anim8.newAnimation(fishGrid(1, 1), 1)
+    -- self.fish_static_animations = {
+    --     left = anim8.newAnimation(fishGrid(1, 1), 1),
+    --     right = anim8.newAnimation(fishGrid(1, 2), 1),
+    --     up = anim8.newAnimation(fishGrid(1, 3), 1),
+    --     down = anim8.newAnimation(fishGrid(1, 4), 1),
+    -- }
 
     local checkpointAnimation = anim8.newGrid(8, 8, self.checkpointSpritesheet:getPixelWidth(), self.checkpointSpritesheet:getPixelHeight())
     self.checkpointActiveAnimation = anim8.newAnimation(checkpointAnimation('1-4', 1), 0.5)

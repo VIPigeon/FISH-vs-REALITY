@@ -16,16 +16,32 @@ function Game:init()
     self:restart()
 end
 
+function update_hitbox_by_frame(e)
+    -- устанавливает хитбокс, соответствующий фрейму
+    assert(e.sprite)
+
+    local currentAnimation = e.sprite.animations[e.sprite.animation]
+    local currentFrameIndex = currentAnimation.position
+    local currentQuad = currentAnimation.frames[currentFrameIndex]
+    -- ПРЕДПОЛОГАЕТСЯ, что размер сетки одинаковый
+    -- в этом случае мы можем сделать так:
+    local x, y, w, h = currentQuad:getViewport()
+    local frame_x = math.floor(x / w) + 1
+    local frame_y = math.floor(y / h) + 1
+
+    if e.fish then
+        -- ⚠️ СНАЧАЛА идет y, потом x. извините
+        e.hitbox = box_map.to_hitbox(FISH.BOX_BY_FRAME[frame_y][frame_x])
+    elseif e.jelly then
+        -- 🅰️ здесь апдейтим хитбокс медузы по анимации
+    end
+end
 
 function Game:createDefaultPlayer()
     local player = {
         position = {
             x = PLAYER.SPAWN_X,
             y = PLAYER.SPAWN_Y,
-        },
-        rectangle = {
-            width = 8,
-            height = 8,
         },
         player = {
             oxygen = PLAYER.OXYGEN,
@@ -35,6 +51,35 @@ function Game:createDefaultPlayer()
                 i = 1,
                 t = 0,
             },
+        },
+        direction = 'right',
+
+        fish = {}, -- флаг
+        sprite = {
+            animation = 'right', -- Индекс текущей анимации
+            animations = {
+                left = anim8.newAnimation(ASSETS.fishGrid(1, 1), 1),
+                right = anim8.newAnimation(ASSETS.fishGrid(1, 2), 1),
+                up = anim8.newAnimation(ASSETS.fishGrid(1, 3), 1),
+                down = anim8.newAnimation(ASSETS.fishGrid(1, 4), 1),
+
+                left2right = anim8.newAnimation(ASSETS.fishGrid('2-7', 1), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                right2left = anim8.newAnimation(ASSETS.fishGrid('2-7', 2), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                up2down = anim8.newAnimation(ASSETS.fishGrid('2-7', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                down2up = anim8.newAnimation(ASSETS.fishGrid('2-7', 4), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                left2up = anim8.newAnimation(ASSETS.fishGrid('9-12', 1), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                up2left = anim8.newAnimation(ASSETS.fishGrid('13-16', 1), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                right2down = anim8.newAnimation(ASSETS.fishGrid('9-12', 2), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                down2right = anim8.newAnimation(ASSETS.fishGrid('13-16', 2), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                up2right = anim8.newAnimation(ASSETS.fishGrid('9-12', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                right2up = anim8.newAnimation(ASSETS.fishGrid('13-16', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                up2right = anim8.newAnimation(ASSETS.fishGrid('9-12', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                right2up = anim8.newAnimation(ASSETS.fishGrid('13-16', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                down2left = anim8.newAnimation(ASSETS.fishGrid('9-12', 4), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+                left2down = anim8.newAnimation(ASSETS.fishGrid('13-16', 4), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+            },
+            spritesheet = ASSETS.fishSpritesheet,
         },
         rigidbody = {
             velocity = {
@@ -46,13 +91,21 @@ function Game:createDefaultPlayer()
                 y = 0,
             },
         },
-        hitbox = {
-            offset_x = 0,
-            offset_y = 0,
-            width = 8,
-            height = 8,
-        },
+        -- hitbox = {
+        --     offset_x = 2,
+        --     offset_y = 2,
+        --     width = 5,
+        --     height = 4,
+        -- },
     }
+
+    -- for _, row in ipairs(FISH.BOX_BY_FRAME) do
+    --     for _, box in ipairs(row) do
+    --         print(box.x1, box.y1, box.y1, box.y2)
+    --     end
+    --     print()
+    -- end
+    update_hitbox_by_frame(player)
 
     local jump_type = player.player.jump.bucket[1]
     player.player.jump.t = PLAYER.JUMP[jump_type].T
@@ -240,6 +293,10 @@ function Game:update()
         end
 
         if e.player then
+            update_hitbox_by_frame(e)
+        end
+
+        if e.player then
             if Map.isWater(tile) then
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
             else
@@ -248,6 +305,31 @@ function Game:update()
 
             if self.debug.godmode then
                 e.player.oxygen = PLAYER.OXYGEN
+            end
+        end
+
+        if e.player then
+            local direction = false
+            if Input.isDown(KEYBINDS.ACTION_DOWN) then
+                direction = 'down'
+            end
+            if Input.isDown(KEYBINDS.ACTION_UP) then
+                direction = 'up'
+            end
+            if Input.isDown(KEYBINDS.ACTION_LEFT) then
+                direction = 'left'
+            end
+            if Input.isDown(KEYBINDS.ACTION_RIGHT) then
+                direction = 'right'
+            end
+
+            if direction then
+                if direction ~= e.direction then
+                    e.sprite.animation = tostring(e.direction)..'2'..tostring(direction)
+                    e.sprite.animations[e.sprite.animation]:gotoFrame(1)
+                    e.sprite.animations[e.sprite.animation]:resume()
+                    e.direction = direction
+                end
             end
         end
 
@@ -576,7 +658,8 @@ function Game:draw()
         assert(ok)
     end
     Camera.x = player.position.x
-    Camera.y = player.position.y
+    -- Camera.y = player.position.y
+    Camera.y = PLAYER.SPAWN_Y
 
     local left, top = Camera.x - SCREEN.WIDTH / 2, Camera.y - SCREEN.HEIGHT / 2
     local right, bot = Camera.x + SCREEN.WIDTH / 2, Camera.y + SCREEN.HEIGHT / 2
