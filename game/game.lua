@@ -78,6 +78,11 @@ function Game:createDefaultPlayer()
                 right2up = anim8.newAnimation(ASSETS.fishGrid('13-16', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
                 down2left = anim8.newAnimation(ASSETS.fishGrid('9-12', 4), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
                 left2down = anim8.newAnimation(ASSETS.fishGrid('13-16', 4), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                agony_left = anim8.newAnimation(ASSETS.fishGrid('1-4', 5), FISH.AGONY_TIME_PER_FRAME),
+                agony_right = anim8.newAnimation(ASSETS.fishGrid('1-4', 6), FISH.AGONY_TIME_PER_FRAME),
+                agony_up = anim8.newAnimation(ASSETS.fishGrid('1-4', 7), FISH.AGONY_TIME_PER_FRAME),
+                agony_down = anim8.newAnimation(ASSETS.fishGrid('1-4', 8), FISH.AGONY_TIME_PER_FRAME),
             },
             spritesheet = ASSETS.fishSpritesheet,
         },
@@ -346,6 +351,13 @@ function Game:update()
                     -- e.sprite.animations[e.sprite.animation]:gotoFrame(1)
                     -- e.sprite.animations[e.sprite.animation]:resume()
                     e.direction = direction
+                end
+            end
+
+            if not Map.isWater(tile) then
+                local a = e.sprite.animation
+                if e.sprite.animations[a].status == 'paused' then
+                    e.sprite.animation = 'agony_'..tostring(e.direction)
                 end
             end
         end
