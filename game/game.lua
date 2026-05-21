@@ -161,6 +161,7 @@ function Game:restart()
             width = 8,
             height = 8,
         },
+        color = COLOR.BRIGHTEST,
         sprite = {
             animation = 'up_release', -- Индекс текущей анимации
             animations = {
@@ -183,7 +184,7 @@ function Game:restart()
             spritesheet = ASSETS.jellySpritesheet,
         },
         jelly = {
-            program = '..D..R..U....L',
+            program = '..d..R..u....L',
             programTimer = Timer:new(JELLY.TICK_FREQUENCY),
             programIndex = 1,
         },
@@ -548,24 +549,12 @@ function Game:update()
                 local nextCommandBig = isUpper(nextCommand)
                 nextCommand = nextCommand:lower()
 
-                local rotations = {
-                    ['u'] = { rotation = 0,             flipH = false, flipV = false },
-                    ['d'] = { rotation = ROTATE_180,    flipH = false, flipV = true },
-                    ['l'] = { rotation = ROTATE_LEFT, flipH = false, flipV = false },
-                    ['r'] = { rotation = ROTATE_RIGHT, flipH = false, flipV = false },
-                }
                 local directions = {
                     ['u'] = {  0, -1 },
                     ['d'] = {  0,  1 },
                     ['l'] = { -1,  0 },
                     ['r'] = {  1,  0 },
                 }
-
-                if command == '.' and nextCommand ~= '.' then
-                    e.sprite.rotation = rotations[nextCommand].rotation
-                    e.sprite.flipH = rotations[nextCommand].flipH
-                    e.sprite.flipV = rotations[nextCommand].flipV
-                end
 
                 local dashStrength = 0.0
                 if bigDash then
@@ -602,8 +591,11 @@ function Game:update()
                     dashStrength = JELLY.DASH_STRENGTH
                 end
 
-                -- Чтобы медуза меняла цвет. Геймджем, ничего не попишешь...
-                local animationBonus = nextCommandBig and 3 or 0
+                if nextCommandBig then
+                    e.color = COLOR.LIGHT_RED
+                else
+                    e.color = COLOR.LIGHT
+                end
 
                 e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())
 
@@ -797,7 +789,7 @@ function Game:draw()
             if e.color then
                 love.graphics.setColor(e.color)
             end
-            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
+            animation:draw(e.sprite.spritesheet, x, y)
         end
 
         if e.particles then
