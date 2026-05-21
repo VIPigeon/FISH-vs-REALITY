@@ -376,10 +376,6 @@ function Game:update()
                 e.rigidbody.acceleration.x = 0
                 e.rigidbody.acceleration.y = 0
 
-                if Input.isJustPressed(KEYBINDS.JUMP) then
-                    self:killPlayer()
-                end
-
                 local onGround = Physics.is_on_ground(e.position, e.hitbox)
                 if onGround then -- автопрыжок только на земле
                     e.player.jump.t = Time.tick(e.player.jump.t)
