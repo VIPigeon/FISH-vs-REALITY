@@ -52,6 +52,7 @@ function Game:createDefaultPlayer()
                 t = 0,
             },
         },
+        color = COLOR.RED,
         direction = 'right',
 
         fish = {}, -- флаг
@@ -122,22 +123,31 @@ function Game:restart()
     self.handles = {} -- Тут лежат ссылки на entities, если к ним нужен доступ
                       -- Handles это прикольная тема, можно почитать тут:
                       -- https://floooh.github.io/2018/06/17/handles-vs-pointers.html
-    self.handles.waterSurfaces = {}
+    self.handles.water = {}
 
     local player = Game:createDefaultPlayer()
 
-    local waterSurface = {
+    local water = {
         position = { x = 24, y = 72 },
-        waterSurface = {
+        water = {
             width = 80 - 4*8,
-            height = 8,
-        },
-        shader = {
-            shader = ASSETS.waterSurfaceShader,
-            timer = Timer:new(1.0),
+            height = 32,
+            waveTimer = Timer:new(1.0),
+            shader = ASSETS.waterShader,
+            surfaceShader = ASSETS.waterSurfaceShader,
+            surface = {},
         },
     }
-    waterSurface.shader.timer:stop()
+    water.water.waveTimer:stop()
+    local water2 = {
+        position = { x = 56+2*8, y = 80 },
+        water = {
+            width = 24,
+            height = 24,
+            waveTimer = Timer:new(1.0),
+            shader = ASSETS.waterShader,
+        },
+    }
 
     local jelly = {
         position = { x = 32, y = 80 },
@@ -223,7 +233,8 @@ function Game:restart()
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
 
-    table.insert(self.handles.waterSurfaces, self.entityPool:put(waterSurface))
+    table.insert(self.handles.water, self.entityPool:put(water))
+    table.insert(self.handles.water, self.entityPool:put(water2))
     self.handles.player = self.entityPool:put(player)
 end
 
@@ -308,10 +319,6 @@ function Game:update()
             end
         end
 
-        if e.player or e.jelly then
-            update_hitbox_by_frame(e)
-        end
-
         if e.player then
             if Map.isWater(tile) then
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
@@ -356,14 +363,15 @@ function Game:update()
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
-                for _, handle in ipairs(self.handles.waterSurfaces) do
+                for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
+                    if waterEntity.water.surface then
+                        local impactX = (e.position.x + e.hitbox.offset_x + e.hitbox.width / 2) - waterEntity.position.x
 
-                    local impactX = e.position.x - waterEntity.position.x
-
-                    waterEntity.shader.timer:restart()
-                    waterEntity.shader.shader:send('center', impactX / waterEntity.waterSurface.width)
-                    waterEntity.shader.shader:send('strength', 1)
+                        waterEntity.water.waveTimer:restart()
+                        waterEntity.water.surfaceShader:send('center', impactX / waterEntity.water.width)
+                        waterEntity.water.surfaceShader:send('strength', e.rigidbody.transition == TRANSITION.WATER_TO_LAND and -1 or 1)
+                    end
                 end
             end
 
@@ -430,11 +438,12 @@ function Game:update()
             if (e.player and self.debug.godmode) or Map.isWater(tile) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    if math.abs(e.rigidbody.velocity.x) < 75 then
-                        e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
-                    else
-                        e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
-                    end
+                    e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
+                    --if math.abs(e.rigidbody.velocity.x) < 75 then
+                    --    e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
+                    --else
+                    --    e.rigidbody.velocity.x = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.x
+                    --end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -541,7 +550,7 @@ function Game:update()
 
                 local rotations = {
                     ['u'] = { rotation = 0,             flipH = false, flipV = false },
-                    ['d'] = { rotation = ROTATE_180,             flipH = false, flipV = true },
+                    ['d'] = { rotation = ROTATE_180,    flipH = false, flipV = true },
                     ['l'] = { rotation = ROTATE_LEFT, flipH = false, flipV = false },
                     ['r'] = { rotation = ROTATE_RIGHT, flipH = false, flipV = false },
                 }
@@ -648,15 +657,6 @@ function Game:update()
             e.particles.system:update(deltaTime)
         end
 
-        if e.waterSurface then
-            if not e.shader.timer:elapsed() then
-                e.shader.timer:tick()
-                e.shader.shader:send('time', e.shader.timer:timeElapsed())
-            else
-                e.shader.shader:send('strength', 0)
-            end
-        end
-
         if e.ground_physics and not Map.isWater(tile) then
             local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
             local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -674,6 +674,25 @@ function Game:update()
             animation:update(deltaTime)
         end
     end)
+
+    self.entityPool:foreach(function(e, ref)
+        if e.player or e.jelly then
+            local oldWidth = e.hitbox.offset_x
+            local oldHeight = e.hitbox.offset_y
+            local oldPosition = { x = e.position.x + e.hitbox.offset_x, y = e.position.y + e.hitbox.offset_y }
+
+            update_hitbox_by_frame(e)
+
+            local current_rect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
+            local collision = Physics.check_collision_rect_tilemap(current_rect)
+            if collision ~= nil then
+                Physics.try_to_unstuck_rigidbody(oldPosition, e.hitbox)
+                e.position.x = oldPosition.x - e.hitbox.offset_x
+                e.position.y = oldPosition.y - e.hitbox.offset_y
+            end
+        end
+    end)
+
 end
 
 
@@ -713,6 +732,52 @@ function Game:draw()
         end
 
         local x, y = Camera:worldToView(e.position.x, e.position.y)
+        if e.water then
+            if e.water.surface then
+                e.water.shader:send('y', e.position.y + 8)
+                e.water.shader:send('height', e.water.height - 8)
+                e.water.shader:send('colorTop', WORLD.WATER_COLOR_TOP)
+                e.water.shader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+                e.water.surfaceShader:send('y', e.position.y)
+                e.water.surfaceShader:send('height', 8)
+                e.water.surfaceShader:send('colorTop', WORLD.WATER_COLOR_TOP)
+                e.water.surfaceShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+                if not e.water.waveTimer:elapsed() then
+                    e.water.waveTimer:tick()
+                    e.water.surfaceShader:send('time', e.water.waveTimer:timeElapsed())
+                else
+                    e.water.surfaceShader:send('strength', 0)
+                end
+            else
+                e.water.shader:send('y', e.position.y)
+                e.water.shader:send('height', e.water.height)
+                e.water.shader:send('colorTop', WORLD.WATER_COLOR_TOP)
+                e.water.shader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+            end
+
+            if e.water.surface then
+                assert(e.water.height >= 8)
+                love.graphics.setShader(e.water.surfaceShader)
+                love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, 8)
+
+                love.graphics.setShader(e.water.shader)
+                love.graphics.setColor(COLOR.WHITE)
+                love.graphics.draw(ASSETS.whitePixel, x, y + 8, 0, e.water.width, e.water.height - 8)
+            else
+                love.graphics.setShader(e.water.shader)
+                love.graphics.setColor(COLOR.WHITE)
+                love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, e.water.height)
+            end
+            love.graphics.setShader()
+        end
+    end)
+
+    self.entityPool:foreach(function(e, ref)
+        if not e.position then
+            return
+        end
+
+        local x, y = Camera:worldToView(e.position.x, e.position.y)
 
         if e.rectangle then
             if e.player then
@@ -725,30 +790,14 @@ function Game:draw()
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
 
-        if e.waterSurface then
-            love.graphics.setShader(e.shader.shader)
-            love.graphics.setColor(COLOR.WHITE)
-            love.graphics.draw(ASSETS.bluePixel, x, y, 0, e.waterSurface.width, e.waterSurface.height)
-            love.graphics.setShader()
-        end
-
-        if e.sprite and not e.shader then
+        if e.sprite and not e.water then
             local animation = e.sprite.animations[e.sprite.animation]
             local w, h = animation:getDimensions()
-            -- if e.sprite.rotation then
-            --     if e.sprite.rotation == ROTATE_RIGHT then
-            --         x = x + w
-            --         y = y
-            --     elseif e.sprite.rotation == ROTATE_LEFT then
-            --         x = x
-            --         y = y + h / 2
-            --     elseif e.sprite.rotation == ROTATE_180 then
-            --         x = x + w
-            --         y = y + h / 2
-            --     end
-            -- end
-            -- animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
-            animation:draw(e.sprite.spritesheet, x, y)
+
+            if e.color then
+                love.graphics.setColor(e.color)
+            end
+            animation:draw(e.sprite.spritesheet, x, y, e.sprite.rotation)
         end
 
         if e.particles then

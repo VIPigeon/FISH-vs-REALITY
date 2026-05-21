@@ -180,3 +180,87 @@ function Physics.check_collision_rect_rect(r1, r2)
     end
     return true
 end
+
+
+function Physics.try_to_unstuck_rigidbody(position, hitbox)
+    local current_rect = Hitbox.to_rect(hitbox, position.x, position.y)
+
+    local originalPositionX = position.x + hitbox.offset_x
+    local originalPositionY = position.y + hitbox.offset_y
+
+    local new_rect = current_rect
+
+    local bestDistance = 10000
+    local bestX = -1000
+    local bestY = -1000
+
+    local radius = 1
+    while radius < 10 do
+        -- В каждой итерации проходимся по квадрату тайлов вокруг застявшего с
+        -- размером стороны radius.
+
+        for dy = -radius, radius do
+            new_rect.x = originalPositionX - radius
+            new_rect.y = originalPositionY + dy
+            if Physics.check_collision_rect_tilemap(new_rect) == nil then
+                local distance = lume.distance(new_rect.x, new_rect.y, originalPositionX, originalPositionY)
+                if bestDistance > distance then
+                    bestDistance = distance
+                    bestX = new_rect.x
+                    bestY = new_rect.y
+                end
+            end
+
+            new_rect.x = originalPositionX + radius
+            new_rect.y = originalPositionY + dy
+            if Physics.check_collision_rect_tilemap(new_rect) == nil then
+                local distance = lume.distance(new_rect.x, new_rect.y, originalPositionX, originalPositionY)
+                if bestDistance > distance then
+                    bestDistance = distance
+                    bestX = new_rect.x
+                    bestY = new_rect.y
+                end
+            end
+        end
+
+        for dx = -radius + 1, radius - 1 do
+            new_rect.x = originalPositionX + dx
+            new_rect.y = originalPositionY - radius
+            if Physics.check_collision_rect_tilemap(new_rect) == nil then
+                local distance = lume.distance(new_rect.x, new_rect.y, originalPositionX, originalPositionY)
+                if bestDistance > distance then
+                    bestDistance = distance
+                    bestX = new_rect.x
+                    bestY = new_rect.y
+                end
+            end
+
+            new_rect.x = originalPositionX + dx
+            new_rect.y = originalPositionY + radius
+            if Physics.check_collision_rect_tilemap(new_rect) == nil then
+                local distance = lume.distance(new_rect.x, new_rect.y, originalPositionX, originalPositionY)
+                if bestDistance > distance then
+                    bestDistance = distance
+                    bestX = new_rect.x
+                    bestY = new_rect.y
+                end
+            end
+        end
+
+        radius = radius + 1
+
+        if bestDistance < 10000 then
+            break
+        end
+    end
+
+    if bestX == -1000 or bestY == -1000 then
+        -- Это безнадёга. Проверили квадрат размером в 4 тайла -- никуда не
+        -- помещается. Тут только менять уровень или же это смертельный баг.
+        lume.trace("SOMEONE IS STUCK TO DEATH AT " .. position.x .. ", " .. position.y .. " FOREVER...")
+    else
+        lume.trace('Unstuck from ', position.x, position.y, ' to ', bestX, bestY, 'distance', bestDistance)
+        position.x = bestX
+        position.y = bestY
+    end
+end
