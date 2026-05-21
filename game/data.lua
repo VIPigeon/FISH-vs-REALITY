@@ -57,6 +57,7 @@ ROTATE_180 =              math.pi
 
 
 PLAYER = {
+    CLICKS_TILL_UNSTUN = 15,
     WATER_ACCELERATION = 180,
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
@@ -142,6 +143,9 @@ JELLY = {
     -- TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
+
+    STUN_TIME = 1.5,
+    KNOCKBACK = 400,
 
     TIME_PER_FRAME = 0.07,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),

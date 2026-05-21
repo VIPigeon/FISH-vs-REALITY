@@ -91,3 +91,12 @@ end
 function string:equalIgnoreCase(s)
     return string.lower(self) == string.lower(s)
 end
+
+function normalize(x, y)
+    if x == 0 and y == 0 then
+        return {x = 0, y = 0}
+    end
+
+    local length = math.sqrt(x*x + y*y)
+    return { x = x / length, y = y / length }
+end
