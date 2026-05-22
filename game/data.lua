@@ -65,11 +65,11 @@ ROTATE_180 =              math.pi
 PLAYER = {
     STUN_CLICK_SHAKE_DURATION = 0.1,
     CLICKS_TILL_UNSTUN = 15,
-    WATER_ACCELERATION = 180,
+    WATER_ACCELERATION = 210,
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
     GROUND_ACCELERATION = 36,
-    MAX_VELOCITY = 120,
+    MAX_VELOCITY = 140,
 
     SPAWN_X = 40,
     SPAWN_Y = 80,
@@ -228,7 +228,7 @@ WORLD = {
     WIDTH = 999,
     HEIGHT = 999,
 
-    WATER_MAX_HEIGHT = 400,
+    WATER_MAX_HEIGHT = 400 + 17*8,
 
     -- Что, думаешь это просто случайные магические числа?
     --
