@@ -232,15 +232,16 @@ function Game:init_spawn_points()
                         acceleration = { x = 0, y = 0 },
                     },
                     hitbox = {
-                        offset_x = 3,
-                        offset_y = 3,
-                        width = 1,
-                        height = 1,
+                        offset_x = 2,
+                        offset_y = 1,
+                        width = 3,
+                        height = 4,
                     },
                     microFish = {
                         target = { x = 8*x, y = 8*y },
                         spawn = {x = 8*x, y = 8*y },
                     },
+                    color = lume.randomchoice(SHRIMP_COLORS),
                     sprite = {
                         animation = 1,
                         animations = {
@@ -248,7 +249,7 @@ function Game:init_spawn_points()
                             anim8.newAnimation(ASSETS.miniFishGrid(2, 1), 1.0),
                         },
                         spritesheet = ASSETS.miniFish,
-                    }
+                    },
                 }
                 self.entityPool:put(microFish)
             end

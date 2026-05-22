@@ -300,6 +300,13 @@ function JELLY.build_program(x, y)
     return table.concat(program, '..')..'..' -- потом будем думать
 end
 
+SHRIMP_COLORS = {
+    lume.color('#d2aa99'),
+    lume.color('#f0abab'),
+    COLOR.LIGHT_RED,
+    COLOR.BRIGHTEST,
+}
+
 
 WORLD = {
     WIDTH = 999,
@@ -362,7 +369,7 @@ function ASSETS:loadAll()
     self.ripple = love.graphics.newImage('content/ripple.png')
 
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
-    self.miniFishGrid = anim8.newGrid(6, 3, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
+    self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
