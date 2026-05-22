@@ -311,9 +311,11 @@ function Game:update()
         local tile = 0
         local tileX = -1
         local tileY = -1
+        local centerX = -1
+        local centerY = -1
         if e.position and e.hitbox then
-            local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
-            local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
+            centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
+            centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
             tileX, tileY = Map.worldToTile(centerX, centerY)
             tile = Map.get(tileX, tileY)
         end
@@ -329,7 +331,7 @@ function Game:update()
         end
 
         if e.player then
-            if Map.isWater(tile) then
+            if Map.isWater(tile, centerY) then
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
             else
                 e.player.oxygen = Time.tick(e.player.oxygen)
@@ -365,7 +367,7 @@ function Game:update()
                 end
             end
 
-            if not Map.isWater(tile) then
+            if not Map.isWater(tile, centerY) then
                 local a = e.sprite.animation
                 if e.sprite.animations[a].status == 'paused' then
                     e.sprite.animation = 'agony_'..tostring(e.direction)
@@ -406,7 +408,8 @@ function Game:update()
             e.rigidbody.acceleration.y = 0
 
             if e.player.clickTillUnstunned == 0 then
-                if self.debug.godmode or Map.isWater(tile) then
+                e.color = COLOR.RED
+                if self.debug.godmode or Map.isWater(tile, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
                     end
@@ -478,9 +481,9 @@ function Game:update()
         end
 
         if e.rigidbody then
-            local wereWeInWaterAtStart = Map.isWater(tile)
+            local wereWeInWaterAtStart = Map.isWater(tile, centerY)
 
-            if (e.player and self.debug.godmode) or Map.isWater(tile) then
+            if (e.player and self.debug.godmode) or Map.isWater(tile, centerY) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     if math.abs(e.rigidbody.velocity.x) < 75 then
@@ -556,9 +559,9 @@ function Game:update()
                 e.rigidbody.velocity.y = e.rigidbody.velocity.y + vel * 0.5 * deltaTime
             end
 
-            local centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
-            local centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
-            local areWeInWater = Map.isWater(Map.get(Map.worldToTile(centerX, centerY)))
+            local nextCenterX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
+            local nextCenterY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
+            local areWeInWater = Map.isWater(Map.get(Map.worldToTile(nextCenterX, nextCenterY)), nextCenterY)
 
             if areWeInWater and not wereWeInWaterAtStart then
                 e.rigidbody.transition = TRANSITION.LAND_TO_WATER
@@ -705,7 +708,7 @@ function Game:update()
             e.particles.system:update(deltaTime)
         end
 
-        if e.ground_physics and not Map.isWater(tile) then
+        if e.ground_physics and not Map.isWater(tile, centerY) then
             local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
             local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
 

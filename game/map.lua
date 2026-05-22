@@ -19,7 +19,12 @@ function Map.get(tileX, tileY)
 end
 
 
-function Map.isWater(tileId)
+function Map.isWater(tileId, y)
+    assert(y ~= nil)
+    if table.contains(WORLD.TILE.TOP_WATER, tileId) then
+        local floor = math.floor(y / 8)
+        return y > 4 + 8*floor
+    end
     return table.contains(WORLD.TILE.WATER, tileId)
 end
 
