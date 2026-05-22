@@ -74,17 +74,17 @@ function Game:createDefaultPlayer()
                 up = anim8.newAnimation(ASSETS.fishGrid('13-14', 7), FISH.TIME_PER_FRAME*4),
                 down = anim8.newAnimation(ASSETS.fishGrid('13-14', 8), FISH.TIME_PER_FRAME*4),
 
-                up_left = anim8.newAnimation(ASSETS.fishGrid(11, 1), 1),
-                left_up = anim8.newAnimation(ASSETS.fishGrid(9, 1), 1),
+                -- up_left = anim8.newAnimation(ASSETS.fishGrid(11, 1), 1),
+                -- left_up = anim8.newAnimation(ASSETS.fishGrid(9, 1), 1),
 
-                down_left = anim8.newAnimation(ASSETS.fishGrid(9, 4), 1),
-                left_down = anim8.newAnimation(ASSETS.fishGrid(11, 4), 1),
+                -- down_left = anim8.newAnimation(ASSETS.fishGrid(9, 4), 1),
+                -- left_down = anim8.newAnimation(ASSETS.fishGrid(11, 4), 1),
 
-                up_right = anim8.newAnimation(ASSETS.fishGrid(9, 3), 1),
-                right_up = anim8.newAnimation(ASSETS.fishGrid(11, 3), 1),
+                -- up_right = anim8.newAnimation(ASSETS.fishGrid(9, 3), 1),
+                -- right_up = anim8.newAnimation(ASSETS.fishGrid(11, 3), 1),
 
-                down_right = anim8.newAnimation(ASSETS.fishGrid(11, 2), 1),
-                right_down = anim8.newAnimation(ASSETS.fishGrid(9, 2), 1),
+                -- down_right = anim8.newAnimation(ASSETS.fishGrid(11, 2), 1),
+                -- right_down = anim8.newAnimation(ASSETS.fishGrid(9, 2), 1),
 
                 --
 
@@ -111,6 +111,7 @@ function Game:createDefaultPlayer()
             },
             spritesheet = ASSETS.fishSpritesheet,
         },
+
         rigidbody = {
             velocity = {
                 x = 0,
