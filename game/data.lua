@@ -170,7 +170,7 @@ JELLY = {
     STUN_TIME = 1.5,
     KNOCKBACK = 400,
 
-    TIME_PER_FRAME = 0.07,
+    TIME_PER_FRAME = 0.06,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),
 
     markers = {
