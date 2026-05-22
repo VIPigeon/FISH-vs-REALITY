@@ -471,6 +471,8 @@ function Game:update()
             e.player.stunnedTimer:tick()
             e.rigidbody.acceleration.x = 0
             e.rigidbody.acceleration.y = 0
+            e.shake.offset_x = 0
+            e.shake.offset_y = 0
 
             if e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.RED
