@@ -239,6 +239,35 @@ function Game:restart()
     bubbleParticles:setLinearAcceleration(-2, -1, 2, -2.5)
     bubbleParticles:setColors(1, 1, 1, 0.5, 1, 1, 1, 0)
 
+    local mollusk = {
+        position = { x = 150, y = 326 },
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.molluskGrid(1, 1), 0.5, 'pauseAtEnd'),
+                anim8.newAnimation(ASSETS.molluskGrid(2, 1), 0.5, 'pauseAtEnd'),
+            },
+            spritesheet = ASSETS.mollusk,
+        },
+        hitbox = {
+            offset_x = 0,
+            offset_y = 0,
+            width = 48,
+            height = 16,
+        },
+    }
+    mollusk.playerNearCheck = {
+        distance = 30,
+        inside = function()
+            mollusk.sprite.animation = 2
+        end,
+        outside = function()
+            mollusk.sprite.animation = 1
+        end,
+    }
+
+    self.entityPool:put(mollusk)
+
     local bubbles = {
         position = { x = 195, y = 280 },
         particles = {
@@ -544,6 +573,17 @@ function Game:update()
 
             if not e.player.stunnedTimer:elapsed() then
                 e.sprite.animation = 'agony_right'
+            end
+        end
+
+        if e.playerNearCheck then
+            local player = self.entityPool:get(self.handles.player)
+            if player then
+                if lume.distance(player.position.x, player.position.y, centerX, centerY) < e.playerNearCheck.distance then
+                    e.playerNearCheck.inside()
+                else
+                    e.playerNearCheck.outside()
+                end
             end
         end
 

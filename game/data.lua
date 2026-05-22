@@ -315,6 +315,7 @@ GRAVITY = 200
 ASSETS = {}
 
 function ASSETS:loadAll()
+    self.mollusk = love.graphics.newImage('content/mollusk.png')
     self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')
     self.bubble4x4 = love.graphics.newImage('content/bubble4x4.png')
     self.bubble6x6 = love.graphics.newImage('content/bubble6x6.png')
@@ -326,6 +327,8 @@ function ASSETS:loadAll()
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
+
+    self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
