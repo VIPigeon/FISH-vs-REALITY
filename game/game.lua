@@ -3,6 +3,7 @@ Game = {}
 function Game:init()
     -- Находится в Data
     ASSETS:loadAll()
+    --
 
     Camera:init()
     Input.init()
@@ -124,6 +125,75 @@ function Game:createDefaultPlayer()
 end
 
 
+function Game:spawn_jelly(x, y, direction)
+    local jelly = {
+        position = { x = x*8-4, y = y*8-4 },
+        rigidbody = {
+            velocity = { x = 0, y = 0 },
+            acceleration = { x = 0, y = 0 },
+        },
+        hitbox = {
+            offset_x = 0,
+            offset_y = 0,
+            width = 8,
+            height = 8,
+        },
+        color = COLOR.BRIGHTEST,
+        sprite = {
+            animation = tostring(direction)..'_release',
+            animations = {
+                up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+
+                left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+                left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+            },
+            spritesheet = ASSETS.jellySpritesheet,
+        },
+        jelly = {
+            program = JELLY.build_program(x, y), -- в тайлах
+            programTimer = Timer:new(0.5), -- потом будем думать
+            programIndex = 1,
+            -- program = JELLY_PROGRAMS[program_type],
+            -- programTimer = Timer:new(JELLY_programTimer[program_type]),
+            -- programIndex = JELLY_programIndex[program_type][direction],
+        },
+    }
+    return jelly
+end
+
+function Game:spawn_jelly_if_can(x, y)
+    local tile = Map.get(x, y, 'spawn')
+    for direction, tile_id in pairs(JELLY.markers.small_spawn) do
+        if tile_id == tile then
+            return self:spawn_jelly(x, y, direction)
+        end
+    end
+    return false
+end
+
+
+function Game:init_spawn_points()
+    for x = 0, Map.spawn.width - 1 do
+        for y = 0, Map.spawn.height - 1 do
+            local jelly = self:spawn_jelly_if_can(x, y)
+            if jelly then
+                self.entityPool:put(jelly)
+            end
+        end
+    end
+end
+
 function Game:restart()
     math.randomseed(os.time()*1e7)
 
@@ -157,51 +227,51 @@ function Game:restart()
         },
     }
 
-    local jelly = {
-        position = { x = 32, y = 80 },
-        rigidbody = {
-            velocity = { x = 0, y = 0 },
-            acceleration = { x = 0, y = 0 },
-        },
-        hitbox = {
-            offset_x = 0,
-            offset_y = 0,
-            width = 8,
-            height = 8,
-        },
-        color = COLOR.LIGHT_RED,
-        sprite = {
-            animation = 'up_release', -- Индекс текущей анимации
-            animations = {
-                up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    -- local jelly = {
+    --     position = { x = 32, y = 80 },
+    --     rigidbody = {
+    --         velocity = { x = 0, y = 0 },
+    --         acceleration = { x = 0, y = 0 },
+    --     },
+    --     hitbox = {
+    --         offset_x = 0,
+    --         offset_y = 0,
+    --         width = 8,
+    --         height = 8,
+    --     },
+    --     color = COLOR.BRIGHTEST,
+    --     sprite = {
+    --         animation = 'up_release', -- Индекс текущей анимации
+    --         animations = {
+    --             up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
 
-                left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-                left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-            },
-            spritesheet = ASSETS.jellySpritesheet,
-        },
-        jelly = {
-            program = '..d..R..u....L',
-            programTimer = Timer:new(JELLY.TICK_FREQUENCY),
-            programIndex = 1,
-        },
-    }
+    --             left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --             left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
+    --         },
+    --         spritesheet = ASSETS.jellySpritesheet,
+    --     },
+    --     jelly = {
+    --         program = '..d..R..u....L',
+    --         programTimer = Timer:new(JELLY.TICK_FREQUENCY),
+    --         programIndex = 1,
+    --     },
+    -- }
 
-    local jelly2 = table.deepcopy(jelly)
-    jelly2.position.x = 240
-    jelly2.position.y = 80
-    jelly2.jelly.program = 'lr'
+    -- local jelly2 = table.deepcopy(jelly)
+    -- jelly2.position.x = 240
+    -- jelly2.position.y = 80
+    -- jelly2.jelly.program = 'lr'
 
     local checkpointSprite = {
         animation = 1,
@@ -245,6 +315,8 @@ function Game:restart()
     table.insert(self.handles.water, self.entityPool:put(water))
     table.insert(self.handles.water, self.entityPool:put(water2))
     self.handles.player = self.entityPool:put(player)
+
+    self:init_spawn_points()
 end
 
 
@@ -654,6 +726,13 @@ function Game:update()
                     dashStrength = toWallDashStrength + extraForce
                 else
                     dashStrength = JELLY.DASH_STRENGTH
+                end
+
+                if nextCommandBig then
+                    e.color = COLOR.LIGHT_RED
+                else
+                    -- e.color = COLOR.LIGHT
+                    e.color = COLOR.BRIGHTEST
                 end
 
                 e.jelly.programIndex = moduloIncrement(e.jelly.programIndex, e.jelly.program:len())

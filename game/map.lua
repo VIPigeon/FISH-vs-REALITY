@@ -6,9 +6,10 @@ function Map.init(tilemap)
     Map.spawn = tilemap.layers[2]
 end
 
-function Map.get(tileX, tileY)
-    if 0 <= tileX and tileX < Map.terrain.width and 0 <= tileY and tileY < Map.terrain.height then
-        local tileId = Map.terrain.data[1 + tileY * Map.terrain.width + tileX]
+function Map.get(tileX, tileY, layer)
+    layer = layer or 'terrain'
+    if 0 <= tileX and tileX < Map[layer].width and 0 <= tileY and tileY < Map[layer].height then
+        local tileId = Map[layer].data[1 + tileY * Map[layer].width + tileX]
         if tileId ~= 0 then
             tileId = tileId - 1
         end
