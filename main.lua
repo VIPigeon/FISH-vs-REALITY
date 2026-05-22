@@ -64,8 +64,9 @@ function love.draw()
             if e.player then
                 local cx = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
                 local cy = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
-                local x, y = Camera:worldToDisplay(cx, cy)
-                love.graphics.print(string.format('%d %d', cx, cy), x, y)
+                local x, y = e.position.x + e.hitbox.offset_x, e.position.y + e.hitbox.offset_y
+                local dx, dy = Camera:worldToDisplay(cx, cy)
+                love.graphics.print(string.format('%d %d', x, y), dx, dy)
             end
         end)
     end

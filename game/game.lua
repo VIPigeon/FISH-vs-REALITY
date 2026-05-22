@@ -253,15 +253,16 @@ function Game:restart()
     }
 
     local smallBubbles = bubbleParticles:clone()
-    smallBubbles:setEmissionArea('uniform', 1, 1)
-    smallBubbles:setParticleLifetime(1.0, 5.0)
-    smallBubbles:setLinearAcceleration(-2, -2, 2, -5)
+    smallBubbles:setEmissionArea('uniform', 2, 2)
+    smallBubbles:setEmissionRate(5.0)
+    smallBubbles:setParticleLifetime(2.0, 9.0)
+    smallBubbles:setLinearAcceleration(-5, -2, 5, -12)
     smallBubbles:setTexture(ASSETS.bubble3x3)
     local pipeBubbles = {
-        position = { x = 270, y = 305 },
+        position = { x = 267, y = 302 },
         particles = {
             system = smallBubbles,
-            layer = -1,
+            layer = 0,
         },
     }
 
