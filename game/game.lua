@@ -149,7 +149,7 @@ end
 
 function Game:spawn_jelly(x, y, direction)
     local jelly = {
-        position = { x = x*8-4, y = y*8-4 },
+        position = { x = x*8, y = y*8 },
         rigidbody = {
             velocity = { x = 0, y = 0 },
             acceleration = { x = 0, y = 0 },
@@ -157,8 +157,8 @@ function Game:spawn_jelly(x, y, direction)
         hitbox = {
             offset_x = 0,
             offset_y = 0,
-            width = 8,
-            height = 8,
+            width = 1,
+            height = 1,
         },
         color = COLOR.BRIGHTEST,
         sprite = {
@@ -191,6 +191,11 @@ function Game:spawn_jelly(x, y, direction)
             -- programIndex = JELLY_programIndex[program_type][direction],
         },
     }
+
+    update_hitbox_by_frame(jelly)
+    jelly.position.x = (8*x + 4) - jelly.hitbox.offset_x - jelly.hitbox.width/2
+    jelly.position.y = (8*y + 4) - jelly.hitbox.offset_y - jelly.hitbox.height/2
+
     return jelly
 end
 
