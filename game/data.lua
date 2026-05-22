@@ -109,6 +109,8 @@ PLAYER = {
             'middle',
             'high',
         },
+
+        X_AGONY
     },
     OXYGEN = 15, -- время жизни без воды (секунды)
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
@@ -375,7 +377,7 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
 
-    number amplitude = 9.0/16.0;
+    number amplitude = 0.6;
     number waterCutoff = amplitude;
     number frequency = 10;
     number waveSpeed = 1;
