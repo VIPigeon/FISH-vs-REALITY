@@ -537,6 +537,9 @@ function Game:update()
         end
 
         if e.player then
+            e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
+            e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
+
             if e.player.oxygen <= 0 then
                 self:killPlayer()
             end
@@ -571,7 +574,6 @@ function Game:update()
             e.shake.offset_y = 0
 
             if e.player.stunnedTimer:elapsed() then
-                e.color = COLOR.RED
                 if self.debug.godmode or Map.isWater(tile, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
@@ -653,7 +655,7 @@ function Game:update()
         if e.rigidbody then
             local wereWeInWaterAtStart = Map.isWater(tile, centerY)
 
-            if self.debug.godmode then
+            if e.player and self.debug.godmode then
                 e.position.x = e.position.x + e.rigidbody.velocity.x * deltaTime
                 e.position.y = e.position.y - e.rigidbody.velocity.y * deltaTime
 
@@ -672,7 +674,7 @@ function Game:update()
                 end
                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
                 e.rigidbody.velocity.y = e.rigidbody.velocity.y + e.rigidbody.acceleration.y * deltaTime
-            elseif e.player or Map.isWater(tile, centerY) then
+            elseif Map.isWater(tile, centerY) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     if math.abs(e.rigidbody.velocity.x) < 75 then
@@ -902,18 +904,6 @@ function Game:update()
 
         if e.particles then
             e.particles.system:update(deltaTime)
-        end
-
-        if e.ground_physics and not Map.isWater(tile, centerY) then
-            local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
-            local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
-
-            e.rigidbody.velocity.y = e.rigidbody.velocity.y - GRAVITY * deltaTime
-        end
-
-        if e.rigidbody and e.player then
-            e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
-            e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
         end
 
         if e.sprite then
