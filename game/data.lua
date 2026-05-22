@@ -110,7 +110,35 @@ PLAYER = {
             'high',
         },
 
-        X_AGONY
+        X_DRIFT = {
+            ['small'] = 99*1.8*0.016,
+            ['big'] = 222*1.8*0.016,
+        },
+        X_BUCKET = {
+            'small-back',
+            'small-back',
+            'small-back',
+            'small-back',
+            'small-back',
+            'small-back',
+            'small-back',
+            'big-back',
+            'big-back',
+
+            'small-front',
+            'small-front',
+            'small-front',
+            'small-front',
+            'small-front',
+            'small-front',
+            'big-front',
+            'big-front',
+            'big-front',
+            'big-front',
+            'big-front',
+
+            'none', -- перезагружаем по none
+        },
     },
     OXYGEN = 15, -- время жизни без воды (секунды)
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
