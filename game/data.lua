@@ -327,6 +327,7 @@ function ASSETS:loadAll()
     self.whiteSquare2x2 = love.graphics.newImage('content/whiteSquare2x2.png')
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
+    self.ripple = love.graphics.newImage('content/ripple.png')
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
@@ -352,6 +353,8 @@ function ASSETS:loadAll()
     self.checkpointActiveAnimation = anim8.newAnimation(checkpointAnimation('1-4', 1), 0.5)
     self.checkpointDisabledAnimation = anim8.newAnimation(checkpointAnimation('5-8', 1), 0.5)
 
+    self.rippleGrid = anim8.newGrid(16, 16, self.ripple:getPixelWidth(), self.ripple:getPixelHeight())
+
     local testGrid = anim8.newGrid(16, 16, self.testTexture:getPixelWidth(), self.testTexture:getPixelHeight())
     self.testAnimation = anim8.newAnimation(testGrid(1, 1), 0.5)
 
@@ -373,7 +376,7 @@ extern number strength;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 160.0;
+    number gradientT = (actualY - 64.0) / 320.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
 
@@ -406,7 +409,7 @@ extern vec4 colorBottom;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 160.0;
+    number gradientT = (actualY - 64.0) / 320.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
     return gradientColor;//vec4(gradientT, gradientT, 0, 1);
