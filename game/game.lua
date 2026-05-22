@@ -53,7 +53,13 @@ function Game:createDefaultPlayer()
                 t = 0,
             },
             stunnedTimer = Timer:new(JELLY.STUN_TIME),
-            clickTillUnstunned = 0,
+            stunClickTimer = Timer:new(0.1),
+        },
+        shake = {
+            offset_x = 0,
+            offset_y = 0,
+            magnitude = 1,
+            timer = Timer:new(PLAYER.STUN_CLICK_SHAKE_DURATION),
         },
         color = COLOR.RED,
         direction = 'right',
@@ -204,52 +210,6 @@ function Game:restart()
     self.handles.water = {}
 
     local player = Game:createDefaultPlayer()
-
-    -- local jelly = {
-    --     position = { x = 32, y = 80 },
-    --     rigidbody = {
-    --         velocity = { x = 0, y = 0 },
-    --         acceleration = { x = 0, y = 0 },
-    --     },
-    --     hitbox = {
-    --         offset_x = 0,
-    --         offset_y = 0,
-    --         width = 8,
-    --         height = 8,
-    --     },
-    --     color = COLOR.BRIGHTEST,
-    --     sprite = {
-    --         animation = 'up_release', -- Индекс текущей анимации
-    --         animations = {
-    --             up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --         },
-    --         spritesheet = ASSETS.jellySpritesheet,
-    --     },
-    --     jelly = {
-    --         program = '..d..R..u....L',
-    --         programTimer = Timer:new(JELLY.TICK_FREQUENCY),
-    --         programIndex = 1,
-    --     },
-    -- }
-
-    -- local jelly2 = table.deepcopy(jelly)
-    -- jelly2.position.x = 240
-    -- jelly2.position.y = 80
-    -- jelly2.jelly.program = 'lr'
 
     local checkpointSprite = {
         animation = 1,
@@ -474,6 +434,10 @@ function Game:update()
                     e.sprite.animation = 'agony_'..tostring(e.direction)
                 end
             end
+
+            if not e.player.stunnedTimer:elapsed() then
+                e.sprite.animation = 'agony_right'
+            end
         end
 
         if e.player then
@@ -481,7 +445,7 @@ function Game:update()
                 self:killPlayer()
             end
 
-            if e.player.clickTillUnstunned ~= 0 then
+            if not e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.PURPLE
             elseif e.player.oxygen < PLAYER.OXYGEN / 4 then
                 e.color = COLOR.BLUE
@@ -508,7 +472,7 @@ function Game:update()
             e.rigidbody.acceleration.x = 0
             e.rigidbody.acceleration.y = 0
 
-            if e.player.clickTillUnstunned == 0 then
+            if e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.RED
                 if self.debug.godmode or Map.isWater(tile, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
@@ -562,6 +526,9 @@ function Game:update()
                     end
                 end
             else
+                e.shake.timer:tick()
+                e.player.stunClickTimer:tick()
+
                 local actionPressed = false
                 if Input.isJustPressed(KEYBINDS.ACTION_UP) then
                     actionPressed = true
@@ -573,10 +540,15 @@ function Game:update()
                     actionPressed = true
                 end
 
-                if actionPressed then
-                    e.rigidbody.velocity.x = math.random(-20, 20)
-                    e.rigidbody.velocity.y = math.random(-20, 20)
-                    e.player.clickTillUnstunned = e.player.clickTillUnstunned - 1
+                if e.player.stunClickTimer:elapsed() and actionPressed then
+                    e.shake.timer:restart()
+                    e.player.stunClickTimer:restart()
+                    e.player.stunnedTimer.currentTime = e.player.stunnedTimer.currentTime - 0.5
+                end
+
+                if not e.shake.timer:elapsed() then
+                    e.shake.offset_x = math.random(-e.shake.magnitude, e.shake.magnitude)
+                    e.shake.offset_y = math.random(-e.shake.magnitude, e.shake.magnitude)
                 end
             end
         end
@@ -685,9 +657,9 @@ function Game:update()
             if player then
                 local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
                 local ourRect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
-                if player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
+                if not self.debug.godmode and player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
                     player.player.stunnedTimer:restart()
-                    player.player.clickTillUnstunned = PLAYER.CLICKS_TILL_UNSTUN
+                    player.shake.timer:restart()
                     local direction = normalize(player.position.x - e.position.x, e.position.y - player.position.y)
                     player.rigidbody.velocity.x = direction.x * JELLY.KNOCKBACK
                     player.rigidbody.velocity.y = direction.y * JELLY.KNOCKBACK
@@ -968,7 +940,12 @@ function Game:draw()
             if e.color then
                 love.graphics.setColor(e.color)
             end
-            animation:draw(e.sprite.spritesheet, x, y)
+
+            if e.shake then
+                animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
+            else
+                animation:draw(e.sprite.spritesheet, x, y)
+            end
         end
 
         if e.particles then

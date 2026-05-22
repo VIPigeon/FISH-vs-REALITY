@@ -63,6 +63,7 @@ ROTATE_180 =              math.pi
 
 
 PLAYER = {
+    STUN_CLICK_SHAKE_DURATION = 0.1,
     CLICKS_TILL_UNSTUN = 15,
     WATER_ACCELERATION = 180,
     WATER_BOUNCE = 0.5,
@@ -167,7 +168,7 @@ JELLY = {
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
 
-    STUN_TIME = 1.5,
+    STUN_TIME = 5,
     KNOCKBACK = 400,
 
     TIME_PER_FRAME = 0.06,
