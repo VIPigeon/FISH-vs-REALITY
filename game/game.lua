@@ -544,6 +544,8 @@ function Game:update()
                 if e.sprite.animations[a].status == 'paused' then
                     e.sprite.animation = 'agony_'..(e.direction)
                 end
+            elseif string.find(e.sprite.animation, 'agony') then
+                e.sprite.animation = e.direction
             end
 
             if not e.player.stunnedTimer:elapsed() then
