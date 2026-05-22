@@ -8,7 +8,6 @@ end
 
 function Map.get(tileX, tileY, layer)
     layer = layer or 'terrain'
-
     if 0 <= tileX and tileX < Map[layer].width and 0 <= tileY and tileY < Map[layer].height then
         local tileId = Map[layer].data[1 + tileY * Map[layer].width + tileX]
         if tileId ~= 0 then

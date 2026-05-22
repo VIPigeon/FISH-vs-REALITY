@@ -3,7 +3,6 @@ Game = {}
 function Game:init()
     -- Находится в Data
     ASSETS:loadAll()
-    JELLY.prepare_spawn_points()
     --
 
     Camera:init()
@@ -126,9 +125,9 @@ function Game:createDefaultPlayer()
 end
 
 
-function Game:spawn_jelly(x, y, program_type, direction)
+function Game:spawn_jelly(x, y, direction)
     local jelly = {
-        position = { x = x-5, y = y-5 },
+        position = { x = x*8-4, y = y*8-4 },
         rigidbody = {
             velocity = { x = 0, y = 0 },
             acceleration = { x = 0, y = 0 },
@@ -141,7 +140,7 @@ function Game:spawn_jelly(x, y, program_type, direction)
         },
         color = COLOR.BRIGHTEST,
         sprite = {
-            animation = tostring(direction)..'_release', -- Индекс текущей анимации
+            animation = tostring(direction)..'_release',
             animations = {
                 up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
                 up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
@@ -162,9 +161,12 @@ function Game:spawn_jelly(x, y, program_type, direction)
             spritesheet = ASSETS.jellySpritesheet,
         },
         jelly = {
-            program = JELLY_PROGRAMS[program_type],
-            programTimer = Timer:new(JELLY_programTimer[program_type]),
-            programIndex = JELLY_programIndex[program_type][direction],
+            program = JELLY.build_program(x, y), -- в тайлах
+            programTimer = Timer:new(0.5), -- потом будем думать
+            programIndex = 1,
+            -- program = JELLY_PROGRAMS[program_type],
+            -- programTimer = Timer:new(JELLY_programTimer[program_type]),
+            -- programIndex = JELLY_programIndex[program_type][direction],
         },
     }
     return jelly
@@ -172,12 +174,9 @@ end
 
 function Game:spawn_jelly_if_can(x, y)
     local tile = Map.get(x, y, 'spawn')
-
-    for program_type, tile_ids in pairs(JELLY.spawn_points) do
-        for direction, tile_id in pairs(tile_ids) do
-            if tile_id == tile then
-                return self:spawn_jelly(x*8, y*8, program_type, direction)
-            end
+    for direction, tile_id in pairs(JELLY.markers.small_spawn) do
+        if tile_id == tile then
+            return self:spawn_jelly(x, y, direction)
         end
     end
     return false

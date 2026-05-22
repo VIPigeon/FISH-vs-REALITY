@@ -143,24 +143,25 @@ is_lying — лежит ли рыба
 is_nose_flattened — сплющен ли нос
 ]]
 
-JELLY_PROGRAMS = {
-    common = '..d..l..u..r',
-    -- common = '............',
-}
-JELLY_programIndex = {
-    common = {
-        down = 3,
-        left = 6,
-        up = 9,
-        right = 12,
-    },
-}
-JELLY_programTimer = {
-    common = 0.5, -- временно
-}
+-- JELLY_PROGRAMS = {
+--     common = '..d..l..u..r',
+--     -- common = '............',
+-- }
+-- JELLY_programIndex = {
+--     common = {
+--         down = 3,
+--         left = 6,
+--         up = 9,
+--         right = 12,
+--     },
+-- }
+-- JELLY_programTimer = {
+--     common = 0.5, -- временно
+-- }
 
 JELLY = {
-    DASH_STRENGTH = 60,
+    -- DASH_STRENGTH = 60,
+    DASH_STRENGTH = 119,
     BIG_DASH_STRENGTH = 120,
     -- TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
@@ -172,21 +173,54 @@ JELLY = {
     TIME_PER_FRAME = 0.07,
     BOX_BY_FRAME = box_map.get_boxes_from_image('content/jelly-hitboxes.png'),
 
-    spawn_points = {
-        common = {
-            down = 177,
+    markers = {
+        small_spawn = {  -- первый дэш маленький
+            down=177,
+            up=177-16, left=177-1, right=177+1,
         },
-    },
+        big_spawn = {  -- первый дэш сильный
+            down=209,
+            up=209-16, left=209-1, right=209+1,
+        },
+        -- медуза не спавнится, но дэш надо сделать!
+        small_dash = {
+            down=180,
+            up=180-16, left=180-1, right=180+1,
+        },
+        big_dash = {
+            down=212,
+            up=212-16, left=212-1, right=212+1,
+        },
+    }
 }
 
-function JELLY.prepare_spawn_points()
-    for _, program in pairs(JELLY.spawn_points) do
-        program.up = program.down - 16
-        program.left = program.down - 1
-        program.right = program.down + 1
+function JELLY._get_dash(x, y)
+    -- TODO: обрабатывать большие прыжки (надо настроить отскок после большого дэша, чтобы было ровно в тайлы)
+    local tile = Map.get(x, y, 'spawn')
+    local STEP = 3
+    if tile == JELLY.markers.small_spawn.down or tile == JELLY.markers.small_dash.down then
+        return 'd', x, y+STEP
+    elseif tile == JELLY.markers.small_spawn.up or tile == JELLY.markers.small_dash.up then
+        return 'u', x, y-STEP
+    elseif tile == JELLY.markers.small_spawn.left or tile == JELLY.markers.small_dash.left then
+        return 'l', x-STEP, y
+    elseif tile == JELLY.markers.small_spawn.right or tile == JELLY.markers.small_dash.right then
+        return 'r', x+STEP, y
     end
 end
 
+function JELLY.build_program(x, y)
+    local init_x = x
+    local init_y = y
+    local symbol
+    symbol, x, y = JELLY._get_dash(x, y)
+    program = {symbol}
+    while x ~= init_x or y ~= init_y do
+        symbol, x, y = JELLY._get_dash(x, y)
+        table.insert(program, symbol)
+    end
+    return table.concat(program, '..')..'..' -- потом будем думать
+end
 
 
 WORLD = {
