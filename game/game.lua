@@ -68,12 +68,10 @@ function Game:createDefaultPlayer()
         sprite = {
             animation = 'right', -- Индекс текущей анимации
             animations = {
-                -- (пока) не используются
-                left = anim8.newAnimation(ASSETS.fishGrid(1, 1), 1),
-                right = anim8.newAnimation(ASSETS.fishGrid(1, 2), 1),
-                up = anim8.newAnimation(ASSETS.fishGrid(1, 3), 1),
-                down = anim8.newAnimation(ASSETS.fishGrid(1, 4), 1),
-                --
+                left = anim8.newAnimation(ASSETS.fishGrid('13-14', 5), FISH.TIME_PER_FRAME*4),
+                right = anim8.newAnimation(ASSETS.fishGrid('13-14', 6), FISH.TIME_PER_FRAME*4),
+                up = anim8.newAnimation(ASSETS.fishGrid('13-14', 7), FISH.TIME_PER_FRAME*4),
+                down = anim8.newAnimation(ASSETS.fishGrid('13-14', 8), FISH.TIME_PER_FRAME*4),
 
                 up_left = anim8.newAnimation(ASSETS.fishGrid(11, 1), 1),
                 left_up = anim8.newAnimation(ASSETS.fishGrid(9, 1), 1),
@@ -452,15 +450,15 @@ function Game:update()
             end
 
             if direction2 then -- нажали сразу две стрелочки
-                if e.direction == direction then
-                    e.sprite.animation = direction..'_'..direction2
-                elseif e.direction == direction2 then
-                    e.sprite.animation = direction2..'_'..direction
-                elseif e.direction == 'up' or e.direction == 'down' then
-                    e.sprite.animation = direction2..'_'..direction
-                else -- if e.direction == 'left' or e.direction == 'right' then
-                    e.sprite.animation = direction..'_'..direction2
-                end
+                -- if e.direction == direction then
+                --     e.sprite.animation = direction..'_'..direction2
+                -- elseif e.direction == direction2 then
+                --     e.sprite.animation = direction2..'_'..direction
+                -- elseif e.direction == 'up' or e.direction == 'down' then
+                --     e.sprite.animation = direction2..'_'..direction
+                -- else -- if e.direction == 'left' or e.direction == 'right' then
+                --     e.sprite.animation = direction..'_'..direction2
+                -- end
             elseif direction then
                 if direction ~= e.direction then
                     e.sprite.animation = e.direction..'2'..direction
@@ -468,6 +466,17 @@ function Game:update()
                     -- e.sprite.animations[e.sprite.animation]:gotoFrame(1)
                     -- e.sprite.animations[e.sprite.animation]:resume()
                     e.direction = direction
+                elseif e.sprite.animations[e.sprite.animation].status == 'paused' then
+                    reloadAnimation(e)
+                    e.sprite.animation = direction
+                end
+            else
+                if e.sprite.animation == 'left' or
+                        e.sprite.animation == 'right' or
+                        e.sprite.animation == 'up' or
+                        e.sprite.animation == 'down' then
+                    reloadAnimation(e)
+                    e.sprite.animations[e.sprite.animation]:pause()
                 end
             end
 
