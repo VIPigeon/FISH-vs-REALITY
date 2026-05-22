@@ -340,30 +340,34 @@ function Game:restart()
         end
     end
 
+    used = {}
     for y = 0, Map.terrain.height - 1 do
         for x = 0, Map.terrain.width - 1 do
-            local tile = Map.get(x, y)
-            local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
-            if isSurface then
-                local tx = x
-                while table.contains(WORLD.TILE.TOP_WATER, Map.get(tx, y)) do
-                    Map.set(tx, y, 0)
-                    tx = tx + 1
+            if not table.contains(used, y*Map.terrain.width+x) then
+                local tile = Map.get(x, y)
+                local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
+                if isSurface then
+                    local tx = x
+                    while table.contains(WORLD.TILE.TOP_WATER, Map.get(tx, y)) do
+                        table.insert(used, y*Map.terrain.width + tx)
+                        tx = tx + 1
+                    end
+                    table.insert(used, y*Map.terrain.width + tx)
+
+                    local water = {
+                        position = { x = 8*x, y = 8*y - 8 },
+                        water = {
+                            width = 8*(tx - x),
+                            height = 16,
+                            waveTimer = Timer:new(0.75),
+                            surfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface),
+                            surface = {},
+                        },
+                    }
+                    water.water.waveTimer:stop()
+
+                    table.insert(self.handles.water, self.entityPool:put(water))
                 end
-
-                local water = {
-                    position = { x = 8*x, y = 8*y },
-                    water = {
-                        width = 8*(tx - x),
-                        height = 8,
-                        waveTimer = Timer:new(1.0),
-                        surfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface),
-                        surface = {},
-                    },
-                }
-                water.water.waveTimer:stop()
-
-                table.insert(self.handles.water, self.entityPool:put(water))
             end
         end
     end
@@ -568,7 +572,11 @@ function Game:update()
 
                         waterEntity.water.waveTimer:restart()
                         waterEntity.water.surfaceShader:send('center', impactX / waterEntity.water.width)
-                        waterEntity.water.surfaceShader:send('strength', e.rigidbody.transition == TRANSITION.WATER_TO_LAND and -1 or 1)
+                        local strength = 0.5
+                        if vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 90 then
+                            strength = 0.8
+                        end
+                        waterEntity.water.surfaceShader:send('strength', e.rigidbody.transition == TRANSITION.WATER_TO_LAND and -strength or strength)
                     end
                 end
             end
@@ -1021,7 +1029,7 @@ function Game:draw()
             ASSETS.waterShader:send('height', e.water.height)
             ASSETS.waterShader:send('colorTop', WORLD.WATER_COLOR_TOP)
             ASSETS.waterShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
-            e.water.surfaceShader:send('y', e.position.y)
+            e.water.surfaceShader:send('y', e.position.y+8)
             e.water.surfaceShader:send('height', 8)
             e.water.surfaceShader:send('colorTop', WORLD.WATER_COLOR_TOP)
             e.water.surfaceShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
@@ -1034,11 +1042,7 @@ function Game:draw()
 
             assert(e.water.height >= 8)
             love.graphics.setShader(e.water.surfaceShader)
-            love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, 8)
-
-            love.graphics.setShader(e.water.shader)
-            love.graphics.setColor(COLOR.WHITE)
-            love.graphics.draw(ASSETS.whitePixel, x, y + 8, 0, e.water.width, e.water.height - 8)
+            love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, e.water.height)
             love.graphics.setShader()
         end
     end)

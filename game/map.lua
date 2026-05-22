@@ -21,19 +21,12 @@ function Map.get(tileX, tileY, layer)
     end
 end
 
-function Map.set(tileX, tileY, id, layer)
-    layer = layer or 'terrain'
-    if 0 <= tileX and tileX < Map[layer].width and 0 <= tileY and tileY < Map[layer].height then
-        Map[layer].data[1 + tileY * Map[layer].width + tileX] = id
-    end
-end
-
 
 function Map.isWater(tileId, y)
     assert(y ~= nil)
     if table.contains(WORLD.TILE.TOP_WATER, tileId) then
         local floor = math.floor(y / 8)
-        return y > 4 + 8*floor
+        return y > 1 + 8*floor
     end
     return table.contains(WORLD.TILE.WATER, tileId)
 end
