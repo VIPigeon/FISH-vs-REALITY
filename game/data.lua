@@ -63,6 +63,7 @@ ROTATE_180 =              math.pi
 
 
 PLAYER = {
+    STUN_CLICK_SHAKE_DURATION = 0.1,
     CLICKS_TILL_UNSTUN = 15,
     WATER_ACCELERATION = 180,
     WATER_BOUNCE = 0.5,
@@ -167,7 +168,7 @@ JELLY = {
     TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
     DASH_COOLDOWN = 3,
 
-    STUN_TIME = 1.5,
+    STUN_TIME = 5,
     KNOCKBACK = 400,
 
     TIME_PER_FRAME = 0.06,
@@ -226,6 +227,8 @@ end
 WORLD = {
     WIDTH = 999,
     HEIGHT = 999,
+
+    WATER_MAX_HEIGHT = 400,
 
     -- Что, думаешь это просто случайные магические числа?
     --
@@ -318,7 +321,7 @@ extern number strength;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 80.0;
+    number gradientT = (actualY - 64.0) / 160.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
 
@@ -351,7 +354,7 @@ extern vec4 colorBottom;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 80.0;
+    number gradientT = (actualY - 64.0) / 160.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
     return gradientColor;//vec4(gradientT, gradientT, 0, 1);

@@ -53,7 +53,13 @@ function Game:createDefaultPlayer()
                 t = 0,
             },
             stunnedTimer = Timer:new(JELLY.STUN_TIME),
-            clickTillUnstunned = 0,
+            stunClickTimer = Timer:new(0.1),
+        },
+        shake = {
+            offset_x = 0,
+            offset_y = 0,
+            magnitude = 1,
+            timer = Timer:new(PLAYER.STUN_CLICK_SHAKE_DURATION),
         },
         color = COLOR.RED,
         direction = 'right',
@@ -221,74 +227,6 @@ function Game:restart()
 
     local player = Game:createDefaultPlayer()
 
-    local water = {
-        position = { x = 24, y = 72 },
-        water = {
-            width = 80 - 4*8,
-            height = 32,
-            waveTimer = Timer:new(1.0),
-            shader = ASSETS.waterShader,
-            surfaceShader = ASSETS.waterSurfaceShader,
-            surface = {},
-        },
-    }
-    water.water.waveTimer:stop()
-    local water2 = {
-        position = { x = 56+2*8, y = 80 },
-        water = {
-            width = 24,
-            height = 24,
-            waveTimer = Timer:new(1.0),
-            shader = ASSETS.waterShader,
-        },
-    }
-
-    -- local jelly = {
-    --     position = { x = 32, y = 80 },
-    --     rigidbody = {
-    --         velocity = { x = 0, y = 0 },
-    --         acceleration = { x = 0, y = 0 },
-    --     },
-    --     hitbox = {
-    --         offset_x = 0,
-    --         offset_y = 0,
-    --         width = 8,
-    --         height = 8,
-    --     },
-    --     color = COLOR.BRIGHTEST,
-    --     sprite = {
-    --         animation = 'up_release', -- Индекс текущей анимации
-    --         animations = {
-    --             up_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             up_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             up_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 1), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             right_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             right_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             right_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 2), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             down_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             down_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             down_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 3), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-
-    --             left_prepare = anim8.newAnimation(ASSETS.jellyGrid('1-2', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             left_dash = anim8.newAnimation(ASSETS.jellyGrid('3-4', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --             left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
-    --         },
-    --         spritesheet = ASSETS.jellySpritesheet,
-    --     },
-    --     jelly = {
-    --         program = '..d..R..u....L',
-    --         programTimer = Timer:new(JELLY.TICK_FREQUENCY),
-    --         programIndex = 1,
-    --     },
-    -- }
-
-    -- local jelly2 = table.deepcopy(jelly)
-    -- jelly2.position.x = 240
-    -- jelly2.position.y = 80
-    -- jelly2.jelly.program = 'lr'
-
     local checkpointSprite = {
         animation = 1,
         animations = {
@@ -328,9 +266,60 @@ function Game:restart()
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
 
-    table.insert(self.handles.water, self.entityPool:put(water))
-    table.insert(self.handles.water, self.entityPool:put(water2))
     self.handles.player = self.entityPool:put(player)
+
+    used = {}
+    for x = 0, Map.terrain.width - 1 do
+        for y = 0, Map.terrain.height - 1 do
+            if not table.contains(used, y*Map.terrain.width+x) then
+                local tile = Map.get(x, y)
+                local isWater = table.contains(WORLD.TILE.WATER, tile)
+                local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
+                if isWater and not isSurface then
+                    for ty = y, Map.terrain.height - 1 do
+                        table.insert(used, ty*Map.terrain.width+x)
+                    end
+                    table.insert(used, y*Map.terrain.width + x)
+                    local water = {
+                        position = { x = 8*x, y = 8*y },
+                        water = {
+                            width = 8,
+                            height = WORLD.WATER_MAX_HEIGHT - 8*y,
+                        },
+                    }
+                    self.entityPool:put(water)
+                end
+            end
+        end
+    end
+
+    for y = 0, Map.terrain.height - 1 do
+        for x = 0, Map.terrain.width - 1 do
+            local tile = Map.get(x, y)
+            local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
+            if isSurface then
+                local tx = x
+                while table.contains(WORLD.TILE.TOP_WATER, Map.get(tx, y)) do
+                    Map.set(tx, y, 0)
+                    tx = tx + 1
+                end
+
+                local water = {
+                    position = { x = 8*x, y = 8*y },
+                    water = {
+                        width = 8*(tx - x),
+                        height = 8,
+                        waveTimer = Timer:new(1.0),
+                        surfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface),
+                        surface = {},
+                    },
+                }
+                water.water.waveTimer:stop()
+
+                table.insert(self.handles.water, self.entityPool:put(water))
+            end
+        end
+    end
 
     self:init_spawn_points()
 end
@@ -488,6 +477,10 @@ function Game:update()
                     e.sprite.animation = 'agony_'..(e.direction)
                 end
             end
+
+            if not e.player.stunnedTimer:elapsed() then
+                e.sprite.animation = 'agony_right'
+            end
         end
 
         if e.player then
@@ -495,7 +488,7 @@ function Game:update()
                 self:killPlayer()
             end
 
-            if e.player.clickTillUnstunned ~= 0 then
+            if not e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.PURPLE
             elseif e.player.oxygen < PLAYER.OXYGEN / 4 then
                 e.color = COLOR.BLUE
@@ -521,8 +514,10 @@ function Game:update()
             e.player.stunnedTimer:tick()
             e.rigidbody.acceleration.x = 0
             e.rigidbody.acceleration.y = 0
+            e.shake.offset_x = 0
+            e.shake.offset_y = 0
 
-            if e.player.clickTillUnstunned == 0 then
+            if e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.RED
                 if self.debug.godmode or Map.isWater(tile, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
@@ -576,6 +571,9 @@ function Game:update()
                     end
                 end
             else
+                e.shake.timer:tick()
+                e.player.stunClickTimer:tick()
+
                 local actionPressed = false
                 if Input.isJustPressed(KEYBINDS.ACTION_UP) then
                     actionPressed = true
@@ -587,10 +585,15 @@ function Game:update()
                     actionPressed = true
                 end
 
-                if actionPressed then
-                    e.rigidbody.velocity.x = math.random(-20, 20)
-                    e.rigidbody.velocity.y = math.random(-20, 20)
-                    e.player.clickTillUnstunned = e.player.clickTillUnstunned - 1
+                if e.player.stunClickTimer:elapsed() and actionPressed then
+                    e.shake.timer:restart()
+                    e.player.stunClickTimer:restart()
+                    e.player.stunnedTimer.currentTime = e.player.stunnedTimer.currentTime - 0.5
+                end
+
+                if not e.shake.timer:elapsed() then
+                    e.shake.offset_x = math.random(-e.shake.magnitude, e.shake.magnitude)
+                    e.shake.offset_y = math.random(-e.shake.magnitude, e.shake.magnitude)
                 end
             end
         end
@@ -699,9 +702,9 @@ function Game:update()
             if player then
                 local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
                 local ourRect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
-                if player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
+                if not self.debug.godmode and player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
                     player.player.stunnedTimer:restart()
-                    player.player.clickTillUnstunned = PLAYER.CLICKS_TILL_UNSTUN
+                    player.shake.timer:restart()
                     local direction = normalize(player.position.x - e.position.x, e.position.y - player.position.y)
                     player.rigidbody.velocity.x = direction.x * JELLY.KNOCKBACK
                     player.rigidbody.velocity.y = direction.y * JELLY.KNOCKBACK
@@ -897,6 +900,20 @@ function Game:draw()
         assert(ok)
     end
 
+    self.entityPool:foreach(function(e, ref)
+        if e.water and not e.water.surface then
+            local x, y = e.position.x, e.position.y
+            ASSETS.waterShader:send('y', e.position.y)
+            ASSETS.waterShader:send('height', e.water.height)
+            ASSETS.waterShader:send('colorTop', WORLD.WATER_COLOR_TOP)
+            ASSETS.waterShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+            love.graphics.setShader(ASSETS.waterShader)
+            love.graphics.setColor(COLOR.WHITE)
+            love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, e.water.height)
+            love.graphics.setShader()
+        end
+    end)
+
     local left, top = Camera.x, Camera.y
     local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
 
@@ -910,7 +927,9 @@ function Game:draw()
             local tileId = Map.get(x, y)
             local quad = self.getTileQuad(tileId)
             local tx, ty = 8*x, 8*y
-            love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
+            if not Map.isWater(tileId, 0) then
+                love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
+            end
         end
     end
 
@@ -920,42 +939,30 @@ function Game:draw()
         end
 
         local x, y = e.position.x, e.position.y
-        if e.water then
-            if e.water.surface then
-                e.water.shader:send('y', e.position.y + 8)
-                e.water.shader:send('height', e.water.height - 8)
-                e.water.shader:send('colorTop', WORLD.WATER_COLOR_TOP)
-                e.water.shader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
-                e.water.surfaceShader:send('y', e.position.y)
-                e.water.surfaceShader:send('height', 8)
-                e.water.surfaceShader:send('colorTop', WORLD.WATER_COLOR_TOP)
-                e.water.surfaceShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
-                if not e.water.waveTimer:elapsed() then
-                    e.water.waveTimer:tick()
-                    e.water.surfaceShader:send('time', e.water.waveTimer:timeElapsed())
-                else
-                    e.water.surfaceShader:send('strength', 0)
-                end
+
+        if e.water and e.water.surface then
+            ASSETS.waterShader:send('y', e.position.y)
+            ASSETS.waterShader:send('height', e.water.height)
+            ASSETS.waterShader:send('colorTop', WORLD.WATER_COLOR_TOP)
+            ASSETS.waterShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+            e.water.surfaceShader:send('y', e.position.y)
+            e.water.surfaceShader:send('height', 8)
+            e.water.surfaceShader:send('colorTop', WORLD.WATER_COLOR_TOP)
+            e.water.surfaceShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+            if not e.water.waveTimer:elapsed() then
+                e.water.waveTimer:tick()
+                e.water.surfaceShader:send('time', e.water.waveTimer:timeElapsed())
             else
-                e.water.shader:send('y', e.position.y)
-                e.water.shader:send('height', e.water.height)
-                e.water.shader:send('colorTop', WORLD.WATER_COLOR_TOP)
-                e.water.shader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
+                e.water.surfaceShader:send('strength', 0)
             end
 
-            if e.water.surface then
-                assert(e.water.height >= 8)
-                love.graphics.setShader(e.water.surfaceShader)
-                love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, 8)
+            assert(e.water.height >= 8)
+            love.graphics.setShader(e.water.surfaceShader)
+            love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, 8)
 
-                love.graphics.setShader(e.water.shader)
-                love.graphics.setColor(COLOR.WHITE)
-                love.graphics.draw(ASSETS.whitePixel, x, y + 8, 0, e.water.width, e.water.height - 8)
-            else
-                love.graphics.setShader(e.water.shader)
-                love.graphics.setColor(COLOR.WHITE)
-                love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, e.water.height)
-            end
+            love.graphics.setShader(e.water.shader)
+            love.graphics.setColor(COLOR.WHITE)
+            love.graphics.draw(ASSETS.whitePixel, x, y + 8, 0, e.water.width, e.water.height - 8)
             love.graphics.setShader()
         end
     end)
@@ -978,7 +985,12 @@ function Game:draw()
             if e.color then
                 love.graphics.setColor(e.color)
             end
-            animation:draw(e.sprite.spritesheet, x, y)
+
+            if e.shake then
+                animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
+            else
+                animation:draw(e.sprite.spritesheet, x, y)
+            end
         end
 
         if e.particles then

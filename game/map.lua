@@ -19,6 +19,13 @@ function Map.get(tileX, tileY, layer)
     end
 end
 
+function Map.set(tileX, tileY, id, layer)
+    layer = layer or 'terrain'
+    if 0 <= tileX and tileX < Map[layer].width and 0 <= tileY and tileY < Map[layer].height then
+        Map[layer].data[1 + tileY * Map[layer].width + tileX] = id
+    end
+end
+
 
 function Map.isWater(tileId, y)
     assert(y ~= nil)
