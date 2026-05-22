@@ -310,6 +310,8 @@ WORLD = {
     WATER_COLOR_BOTTOM = lume.color('#00b9be'),
 }
 
+MICRO_FISH_SPAWN_TILE = 224
+
 
 GRAVITY = 200
 
@@ -317,6 +319,7 @@ GRAVITY = 200
 ASSETS = {}
 
 function ASSETS:loadAll()
+    self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
     self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')
     self.bubble4x4 = love.graphics.newImage('content/bubble4x4.png')
@@ -331,6 +334,7 @@ function ASSETS:loadAll()
     self.ripple = love.graphics.newImage('content/ripple.png')
 
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
+    self.miniFishGrid = anim8.newGrid(6, 3, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 

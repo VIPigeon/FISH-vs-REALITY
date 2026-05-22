@@ -86,8 +86,6 @@ function Game:createDefaultPlayer()
                 -- down_right = anim8.newAnimation(ASSETS.fishGrid(11, 2), 1),
                 -- right_down = anim8.newAnimation(ASSETS.fishGrid(9, 2), 1),
 
-                --
-
                 left2right = anim8.newAnimation(ASSETS.fishGrid('2-7', 1), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
                 right2left = anim8.newAnimation(ASSETS.fishGrid('2-7', 2), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
                 up2down = anim8.newAnimation(ASSETS.fishGrid('2-7', 3), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
@@ -221,6 +219,35 @@ function Game:init_spawn_points()
             local jelly = self:spawn_jelly_if_can(x, y)
             if jelly then
                 self.entityPool:put(jelly)
+            end
+
+            if Map.get(x, y, 'spawn') == MICRO_FISH_SPAWN_TILE then
+                local microFish = {
+                    position = { x = 8*x, y = 8*y },
+                    rigidbody = {
+                        velocity = { x = 0, y = 0 },
+                        acceleration = { x = 0, y = 0 },
+                    },
+                    hitbox = {
+                        offset_x = 3,
+                        offset_y = 3,
+                        width = 1,
+                        height = 1,
+                    },
+                    microFish = {
+                        target = { x = 8*x, y = 8*y },
+                        spawn = {x = 8*x, y = 8*y },
+                    },
+                    sprite = {
+                        animation = 1,
+                        animations = {
+                            anim8.newAnimation(ASSETS.miniFishGrid(1, 1), 1.0),
+                            anim8.newAnimation(ASSETS.miniFishGrid(2, 1), 1.0),
+                        },
+                        spritesheet = ASSETS.miniFish,
+                    }
+                }
+                self.entityPool:put(microFish)
             end
         end
     end
@@ -493,6 +520,22 @@ function Game:update()
                     e.sprite.animation = 2
                 end
             end
+        end
+
+        if e.microFish then
+            if lume.distance(e.position.x, e.position.y, e.microFish.target.x, e.microFish.target.y) < 3 then
+                e.microFish.target.x = e.microFish.spawn.x + math.random(-8, 8)
+                e.microFish.target.y = e.microFish.spawn.y + math.random(-2, 2)
+            end
+
+            local direction = normalize(e.microFish.target.x - e.position.x, e.position.y - e.microFish.target.y)
+            if direction.x < 0 then
+                e.sprite.animation = 2
+            else
+                e.sprite.animation = 1
+            end
+            e.rigidbody.acceleration.x = 5*direction.x
+            e.rigidbody.acceleration.y = 5*direction.y
         end
 
         if e.player then
