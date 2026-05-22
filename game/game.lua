@@ -241,7 +241,7 @@ function Game:init_spawn_points()
                         target = { x = 8*x, y = 8*y },
                         spawn = {x = 8*x, y = 8*y },
                     },
-                    color = lume.randomchoice(SHRIMP_COLORS),
+                    color = COLOR.LIGHT_RED,
                     sprite = {
                         animation = 1,
                         animations = {
