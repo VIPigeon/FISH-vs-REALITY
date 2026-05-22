@@ -68,10 +68,24 @@ function Game:createDefaultPlayer()
         sprite = {
             animation = 'right', -- Индекс текущей анимации
             animations = {
-                left = anim8.newAnimation(ASSETS.fishGrid(1, 1), 1),
-                right = anim8.newAnimation(ASSETS.fishGrid(1, 2), 1),
-                up = anim8.newAnimation(ASSETS.fishGrid(1, 3), 1),
-                down = anim8.newAnimation(ASSETS.fishGrid(1, 4), 1),
+                left = anim8.newAnimation(ASSETS.fishGrid('13-14', 5), FISH.TIME_PER_FRAME*4),
+                right = anim8.newAnimation(ASSETS.fishGrid('13-14', 6), FISH.TIME_PER_FRAME*4),
+                up = anim8.newAnimation(ASSETS.fishGrid('13-14', 7), FISH.TIME_PER_FRAME*4),
+                down = anim8.newAnimation(ASSETS.fishGrid('13-14', 8), FISH.TIME_PER_FRAME*4),
+
+                up_left = anim8.newAnimation(ASSETS.fishGrid(11, 1), 1),
+                left_up = anim8.newAnimation(ASSETS.fishGrid(9, 1), 1),
+
+                down_left = anim8.newAnimation(ASSETS.fishGrid(9, 4), 1),
+                left_down = anim8.newAnimation(ASSETS.fishGrid(11, 4), 1),
+
+                up_right = anim8.newAnimation(ASSETS.fishGrid(9, 3), 1),
+                right_up = anim8.newAnimation(ASSETS.fishGrid(11, 3), 1),
+
+                down_right = anim8.newAnimation(ASSETS.fishGrid(11, 2), 1),
+                right_down = anim8.newAnimation(ASSETS.fishGrid(9, 2), 1),
+
+                --
 
                 left2right = anim8.newAnimation(ASSETS.fishGrid('2-7', 1), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
                 right2left = anim8.newAnimation(ASSETS.fishGrid('2-7', 2), FISH.TIME_PER_FRAME, 'pauseAtEnd'),
@@ -449,6 +463,7 @@ function Game:update()
 
         if e.player then
             local direction = false
+            local direction2 = false
             if Input.isDown(KEYBINDS.ACTION_DOWN) then
                 direction = 'down'
             end
@@ -461,21 +476,58 @@ function Game:update()
             if Input.isDown(KEYBINDS.ACTION_RIGHT) then
                 direction = 'right'
             end
+            if Input.isDown(KEYBINDS.ACTION_DOWN) and Input.isDown(KEYBINDS.ACTION_LEFT) then
+                direction = 'down'
+                direction2 = 'left'
+            end
+            if Input.isDown(KEYBINDS.ACTION_UP) and Input.isDown(KEYBINDS.ACTION_LEFT) then
+                direction = 'up'
+                direction2 = 'left'
+            end
+            if Input.isDown(KEYBINDS.ACTION_RIGHT) and Input.isDown(KEYBINDS.ACTION_DOWN) then
+                direction = 'down'
+                direction2 = 'right'
+            end
+            if Input.isDown(KEYBINDS.ACTION_RIGHT) and Input.isDown(KEYBINDS.ACTION_UP) then
+                direction = 'up'
+                direction2 = 'right'
+            end
 
-            if direction then
+            if direction2 then -- нажали сразу две стрелочки
+                -- if e.direction == direction then
+                --     e.sprite.animation = direction..'_'..direction2
+                -- elseif e.direction == direction2 then
+                --     e.sprite.animation = direction2..'_'..direction
+                -- elseif e.direction == 'up' or e.direction == 'down' then
+                --     e.sprite.animation = direction2..'_'..direction
+                -- else -- if e.direction == 'left' or e.direction == 'right' then
+                --     e.sprite.animation = direction..'_'..direction2
+                -- end
+            elseif direction then
                 if direction ~= e.direction then
-                    e.sprite.animation = tostring(e.direction)..'2'..tostring(direction)
+                    e.sprite.animation = e.direction..'2'..direction
                     reloadAnimation(e)
                     -- e.sprite.animations[e.sprite.animation]:gotoFrame(1)
                     -- e.sprite.animations[e.sprite.animation]:resume()
                     e.direction = direction
+                elseif e.sprite.animations[e.sprite.animation].status == 'paused' then
+                    reloadAnimation(e)
+                    e.sprite.animation = direction
+                end
+            else
+                if e.sprite.animation == 'left' or
+                        e.sprite.animation == 'right' or
+                        e.sprite.animation == 'up' or
+                        e.sprite.animation == 'down' then
+                    reloadAnimation(e)
+                    e.sprite.animations[e.sprite.animation]:pause()
                 end
             end
 
             if not Map.isWater(tile, centerY) then
                 local a = e.sprite.animation
                 if e.sprite.animations[a].status == 'paused' then
-                    e.sprite.animation = 'agony_'..tostring(e.direction)
+                    e.sprite.animation = 'agony_'..(e.direction)
                 end
             end
 
