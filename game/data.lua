@@ -26,6 +26,7 @@ COLOR = {
     RED = lume.color('#ff6973'),
     LIGHT_RED = lume.color('#ffb0a3'),
     BRIGHTEST = lume.color('#ffeecc'),
+    BACKGROUND = lume.color('#413e52'),
 
     -- Gameboy палитра.
     -- У меня не работает Lospec, и это единственное что я знаю.

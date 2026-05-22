@@ -71,7 +71,8 @@ end
 
 function Camera:beginDraw()
     love.graphics.setCanvas(self.canvas)
-    love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
+    -- love.graphics.clear(COLOR.GAMEBOY.BACKGROUND)
+    love.graphics.clear(COLOR.BACKGROUND)
     love.graphics.setColor(COLOR.WHITE)
     
     love.graphics.push()
