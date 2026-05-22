@@ -227,6 +227,8 @@ WORLD = {
     WIDTH = 999,
     HEIGHT = 999,
 
+    WATER_MAX_HEIGHT = 400,
+
     -- Что, думаешь это просто случайные магические числа?
     --
     -- Как бы не так!
@@ -318,7 +320,7 @@ extern number strength;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 80.0;
+    number gradientT = (actualY - 64.0) / 160.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
 
@@ -351,7 +353,7 @@ extern vec4 colorBottom;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
     number actualY = y + (texture_coords.y * height);
-    number gradientT = (actualY - 64.0) / 80.0;
+    number gradientT = (actualY - 64.0) / 160.0;
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
     return gradientColor;//vec4(gradientT, gradientT, 0, 1);
