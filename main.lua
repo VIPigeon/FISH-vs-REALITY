@@ -59,7 +59,13 @@ function love.draw()
                 local dx, dy = Camera:viewToDisplay(x, y)
                 local w, h = e.hitbox.width * Camera.scale, e.hitbox.height * Camera.scale
                 love.graphics.rectangle('line', dx, dy, w, h)
+            end
 
+            if e.player then
+                local cx = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
+                local cy = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
+                local x, y = Camera:worldToDisplay(cx, cy)
+                love.graphics.print(string.format('%d %d', cx, cy), x, y)
             end
         end)
     end

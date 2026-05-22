@@ -211,6 +211,46 @@ function Game:restart()
 
     local player = Game:createDefaultPlayer()
 
+    local bubbleParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
+    bubbleParticles:setParticleLifetime(5.0, 16.0)
+    bubbleParticles:setEmissionRate(4.0)
+    bubbleParticles:setEmissionArea('uniform', 180, 40)
+    bubbleParticles:setTexture(ASSETS.bubble4x4)
+    bubbleParticles:setLinearAcceleration(-2, -1, 2, -2.5)
+    bubbleParticles:setColors(1, 1, 1, 0.5, 1, 1, 1, 0)
+
+    local bubbles = {
+        position = { x = 195, y = 280 },
+        particles = {
+            system = bubbleParticles,
+            layer = -1,
+        },
+    }
+
+    local bigBubbleSystem = bubbleParticles:clone()
+    bigBubbleSystem:setTexture(ASSETS.bubble6x6)
+    bigBubbleSystem:setEmissionRate(0.5)
+    local bigBubbles = {
+        position = { x = 195, y = 280 },
+        particles = {
+            system = bigBubbleSystem,
+            layer = -1,
+        },
+    }
+
+    local smallBubbles = bubbleParticles:clone()
+    smallBubbles:setEmissionArea('uniform', 1, 1)
+    smallBubbles:setParticleLifetime(1.0, 5.0)
+    smallBubbles:setLinearAcceleration(-2, -2, 2, -5)
+    smallBubbles:setTexture(ASSETS.bubble3x3)
+    local pipeBubbles = {
+        position = { x = 270, y = 305 },
+        particles = {
+            system = smallBubbles,
+            layer = -1,
+        },
+    }
+
     local checkpointSprite = {
         animation = 1,
         animations = {
@@ -249,6 +289,9 @@ function Game:restart()
     end
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
+    self.entityPool:put(bubbles)
+    self.entityPool:put(pipeBubbles)
+    self.entityPool:put(bigBubbles)
 
     self.handles.player = self.entityPool:put(player)
 
@@ -329,6 +372,7 @@ function Game:killPlayer()
             respawnTimer = Timer:new(2.0),
         },
         particles = {
+            layer = 1,
             system = deathParticles,
         },
     }
@@ -497,7 +541,6 @@ function Game:update()
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
                     end
                 else
-
                     local onGround = Physics.is_on_ground(e.position, e.hitbox)
                     if onGround then -- автопрыжок только на земле
                         e.player.jump.t = Time.tick(e.player.jump.t)
@@ -558,7 +601,26 @@ function Game:update()
         if e.rigidbody then
             local wereWeInWaterAtStart = Map.isWater(tile, centerY)
 
-            if (e.player and self.debug.godmode) or Map.isWater(tile, centerY) then
+            if self.debug.godmode then
+                e.position.x = e.position.x + e.rigidbody.velocity.x * deltaTime
+                e.position.y = e.position.y - e.rigidbody.velocity.y * deltaTime
+
+                if e.rigidbody.acceleration.x == 0 then
+                    e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
+                    if math.abs(e.rigidbody.velocity.x) < 1 then
+                        e.rigidbody.velocity.x = 0
+                    end
+                end
+
+                if e.rigidbody.acceleration.y == 0 then
+                    e.rigidbody.velocity.y = e.rigidbody.velocity.y * math.pow(WORLD.WATER_FRICTION, deltaTime)
+                    if math.abs(e.rigidbody.velocity.y) < 1 then
+                        e.rigidbody.velocity.y = 0
+                    end
+                end
+                e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y + e.rigidbody.acceleration.y * deltaTime
+            elseif e.player or Map.isWater(tile, centerY) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     if math.abs(e.rigidbody.velocity.x) < 75 then
@@ -809,7 +871,7 @@ function Game:update()
     end)
 
     self.entityPool:foreach(function(e, ref)
-        if e.player or e.jelly then
+        if (not self.debug.godmode and e.player) or e.jelly then
 
             update_hitbox_by_frame(e)
 
@@ -858,8 +920,8 @@ function Game:draw()
     end
 
     self.entityPool:foreach(function(e, ref)
+        local x, y = e.position.x, e.position.y
         if e.water and not e.water.surface then
-            local x, y = e.position.x, e.position.y
             ASSETS.waterShader:send('y', e.position.y)
             ASSETS.waterShader:send('height', e.water.height)
             ASSETS.waterShader:send('colorTop', WORLD.WATER_COLOR_TOP)
@@ -868,6 +930,13 @@ function Game:draw()
             love.graphics.setColor(COLOR.WHITE)
             love.graphics.draw(ASSETS.whitePixel, x, y, 0, e.water.width, e.water.height)
             love.graphics.setShader()
+        end
+    end)
+
+    self.entityPool:foreach(function(e, ref)
+        local x, y = e.position.x, e.position.y
+        if e.particles and e.particles.layer < 0 then
+            love.graphics.draw(e.particles.system, x, y)
         end
     end)
 
@@ -887,6 +956,8 @@ function Game:draw()
             if not Map.isWater(tileId, 0) then
                 love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
             end
+            local deco = Map.get(x, y, 'decorations')
+            love.graphics.draw(ASSETS.tilesheet, self.getTileQuad(deco), lume.round(tx), lume.round(ty))
         end
     end
 
@@ -950,8 +1021,7 @@ function Game:draw()
             end
         end
 
-        if e.particles then
-            love.graphics.setColor(COLOR.GAMEBOY.LIGHT)
+        if e.particles and e.particles.layer >= 0 then
             love.graphics.draw(e.particles.system, x + 4, y + 4)
             love.graphics.setColor(COLOR.WHITE)
         end

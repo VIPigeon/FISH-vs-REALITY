@@ -4,6 +4,7 @@ function Map.init(tilemap)
     Map.tilemap = tilemap
     Map.terrain = tilemap.layers[1]
     Map.spawn = tilemap.layers[2]
+    Map.decorations = tilemap.layers[3]
 end
 
 function Map.get(tileX, tileY, layer)

@@ -268,6 +268,9 @@ GRAVITY = 200
 ASSETS = {}
 
 function ASSETS:loadAll()
+    self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')
+    self.bubble4x4 = love.graphics.newImage('content/bubble4x4.png')
+    self.bubble6x6 = love.graphics.newImage('content/bubble6x6.png')
     self.jellySpritesheet = love.graphics.newImage('content/jelly.png')
     self.fishSpritesheet = love.graphics.newImage('content/fish.png')
     self.checkpointSpritesheet = love.graphics.newImage('content/checkpoint.png')
