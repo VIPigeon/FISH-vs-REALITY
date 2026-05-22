@@ -199,6 +199,11 @@ function Game:spawn_jelly_if_can(x, y)
             return self:spawn_jelly(x, y, direction)
         end
     end
+    for direction, tile_id in pairs(JELLY.markers.big_spawn) do
+        if tile_id == tile then
+            return self:spawn_jelly(x, y, direction)
+        end
+    end
     return false
 end
 

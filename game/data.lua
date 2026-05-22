@@ -195,6 +195,28 @@ JELLY = {
     }
 }
 
+function JELLY._is_dash_mark(x, y)
+    local tile = Map.get(x, y, 'spawn')
+    if tile == JELLY.markers.small_spawn.down or tile == JELLY.markers.small_dash.down then
+        return true
+    elseif tile == JELLY.markers.small_spawn.up or tile == JELLY.markers.small_dash.up then
+        return true
+    elseif tile == JELLY.markers.small_spawn.left or tile == JELLY.markers.small_dash.left then
+        return true
+    elseif tile == JELLY.markers.small_spawn.right or tile == JELLY.markers.small_dash.right then
+        return true
+    elseif tile == JELLY.markers.big_spawn.down or tile == JELLY.markers.big_dash.down then
+        return true
+    elseif tile == JELLY.markers.big_spawn.up or tile == JELLY.markers.big_dash.up then
+        return true
+    elseif tile == JELLY.markers.big_spawn.left or tile == JELLY.markers.big_dash.left then
+        return true
+    elseif tile == JELLY.markers.big_spawn.right or tile == JELLY.markers.big_dash.right then
+        return true
+    end
+    return false
+end
+
 function JELLY._get_dash(x, y)
     -- TODO: обрабатывать большие прыжки (надо настроить отскок после большого дэша, чтобы было ровно в тайлы)
     local tile = Map.get(x, y, 'spawn')
@@ -207,6 +229,31 @@ function JELLY._get_dash(x, y)
         return 'l', x-STEP, y
     elseif tile == JELLY.markers.small_spawn.right or tile == JELLY.markers.small_dash.right then
         return 'r', x+STEP, y
+
+    elseif tile == JELLY.markers.big_spawn.down or tile == JELLY.markers.big_dash.down then
+        y = y + 1
+        while not JELLY._is_dash_mark(x, y) do
+            y = y + 1
+        end
+        return 'D', x, y
+    elseif tile == JELLY.markers.big_spawn.up or tile == JELLY.markers.big_dash.up then
+        y = y - 1
+        while not JELLY._is_dash_mark(x, y) do
+            y = y - 1
+        end
+        return 'U', x, y
+    elseif tile == JELLY.markers.big_spawn.left or tile == JELLY.markers.big_dash.left then
+        x = x - 1
+        while not JELLY._is_dash_mark(x, y) do
+            x = x - 1
+        end
+        return 'L', x, y
+    elseif tile == JELLY.markers.big_spawn.right or tile == JELLY.markers.big_dash.right then
+        x = x + 1
+        while not JELLY._is_dash_mark(x, y) do
+            x = x + 1
+        end
+        return 'R', x, y
     end
 end
 
