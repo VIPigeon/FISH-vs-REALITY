@@ -54,6 +54,7 @@ function Game:createDefaultPlayer()
             },
             stunnedTimer = Timer:new(JELLY.STUN_TIME),
             stunClickTimer = Timer:new(0.1),
+            spawnRippleTimer = Timer:new(0.2),
         },
         shake = {
             offset_x = 0,
@@ -546,9 +547,34 @@ function Game:update()
             end
         end
 
+        -- Прошу внимание, хайку:
+        if e.death then
+            e.death:tick()
+            if e.death:elapsed() then
+                self.entityPool:delete(ref)
+            end
+        end
+
         if e.player then
             e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
             e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
+
+            e.player.spawnRippleTimer:tick()
+            if Map.isWater(tile, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 80 then
+                e.player.spawnRippleTimer:restart()
+                local ripple = {
+                    position = { x = e.position.x, y = e.position.y },
+                    sprite = {
+                        spritesheet = ASSETS.ripple,
+                        animation = 1,
+                        animations = {
+                            anim8.newAnimation(ASSETS.rippleGrid('1-4', 1), 0.1),
+                        },
+                    },
+                    death = Timer:new(0.5),
+                }
+                self.entityPool:put(ripple)
+            end
 
             if e.player.oxygen <= 0 then
                 self:killPlayer()
@@ -576,6 +602,7 @@ function Game:update()
                         if vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 90 then
                             strength = 0.8
                         end
+
                         waterEntity.water.surfaceShader:send('strength', e.rigidbody.transition == TRANSITION.WATER_TO_LAND and -strength or strength)
                     end
                 end
@@ -651,6 +678,23 @@ function Game:update()
                     actionPressed = true
                 elseif Input.isJustPressed(KEYBINDS.ACTION_RIGHT) then
                     actionPressed = true
+                end
+
+                if actionPressed then
+                    local ripple = {
+                        position = { x = e.position.x, y = e.position.y },
+                        sprite = {
+                            spritesheet = ASSETS.ripple,
+                            animation = 1,
+                            animations = {
+                                anim8.newAnimation(ASSETS.rippleGrid('1-4', 1), 0.05),
+                            },
+                        },
+                        death = Timer:new(0.2),
+                    }
+                    ripple.position.x = ripple.position.x + math.random(-3, 3)
+                    ripple.position.y = ripple.position.y + math.random(-3, 3)
+                    self.entityPool:put(ripple)
                 end
 
                 if e.player.stunClickTimer:elapsed() and actionPressed then
@@ -1054,6 +1098,10 @@ function Game:draw()
 
         local x, y = e.position.x, e.position.y
 
+        if e.color then
+            love.graphics.setColor(e.color)
+        end
+
         if e.rectangle then
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
@@ -1061,10 +1109,6 @@ function Game:draw()
         if e.sprite and not e.water then
             local animation = e.sprite.animations[e.sprite.animation]
             local w, h = animation:getDimensions()
-
-            if e.color then
-                love.graphics.setColor(e.color)
-            end
 
             if e.shake then
                 animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
