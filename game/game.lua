@@ -51,6 +51,9 @@ function Game:createDefaultPlayer()
                 bucket = PLAYER.JUMP.BUCKET,
                 i = 1,
                 t = 0,
+
+                x_i = 1,
+                x_bucket = PLAYER.JUMP.X_BUCKET,
             },
             stunnedTimer = Timer:new(JELLY.STUN_TIME),
             stunClickTimer = Timer:new(0.1),
@@ -642,6 +645,7 @@ function Game:update()
                         e.player.jump.t = Time.tick(e.player.jump.t)
                         if e.player.jump.t == 0 then
                             -- прыжок
+                            -- Y
                             local jump_type = e.player.jump.bucket[e.player.jump.i]
                             e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
 
@@ -654,6 +658,26 @@ function Game:update()
                             end
                             jump_type = e.player.jump.bucket[e.player.jump.i]
                             e.player.jump.t = PLAYER.JUMP[jump_type].T
+
+                            -- дрифт по горизонатли во время прыжка
+                            -- X
+                            local drift = e.player.jump.x_bucket[e.player.jump.x_i]
+                            local is_small_drift = string.find(drift, 'small')
+                            local is_back_drift = string.find(drift, 'back')
+                            if drift == 'none' then
+                                table.shuffle(e.player.jump.x_bucket)
+                                e.player.jump.x_i = 1
+                            else
+                                local Fx = PLAYER.JUMP.X_DRIFT['big']
+                                if is_small_drift then
+                                    Fx = PLAYER.JUMP.X_DRIFT['small']
+                                end
+                                if is_back_drift then
+                                    Fx = -Fx
+                                end
+                                e.player.jump.x_i = e.player.jump.x_i + 1
+                                e.rigidbody.velocity.x = e.rigidbody.velocity.x + Fx
+                            end
                         end
                     else -- горизонтальное перемещение только в воздухе
                         if Input.isDown(KEYBINDS.ACTION_LEFT) then
