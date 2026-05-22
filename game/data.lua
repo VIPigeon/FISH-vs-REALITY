@@ -301,10 +301,7 @@ function JELLY.build_program(x, y)
 end
 
 SHRIMP_COLORS = {
-    lume.color('#d2aa99'),
-    lume.color('#f0abab'),
     COLOR.LIGHT_RED,
-    COLOR.BRIGHTEST,
 }
 
 

@@ -268,16 +268,8 @@ function Game:restart()
 
     local player = Game:createDefaultPlayer()
 
-    local bubbleParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
-    bubbleParticles:setParticleLifetime(5.0, 16.0)
-    bubbleParticles:setEmissionRate(4.0)
-    bubbleParticles:setEmissionArea('uniform', 180, 40)
-    bubbleParticles:setTexture(ASSETS.bubble4x4)
-    bubbleParticles:setLinearAcceleration(-2, -1, 2, -2.5)
-    bubbleParticles:setColors(1, 1, 1, 0.5, 1, 1, 1, 0)
-
     local mollusk = {
-        position = { x = 150, y = 326 },
+        position = { x = 456, y = 176 },
         sprite = {
             animation = 1,
             animations = {
@@ -305,8 +297,15 @@ function Game:restart()
 
     self.entityPool:put(mollusk)
 
+    local bubbleParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
+    bubbleParticles:setParticleLifetime(5.0, 16.0)
+    bubbleParticles:setEmissionRate(10.0)
+    bubbleParticles:setEmissionArea('uniform', 400, 100)
+    bubbleParticles:setTexture(ASSETS.bubble4x4)
+    bubbleParticles:setLinearAcceleration(-2, -1, 2, -2.5)
+    bubbleParticles:setColors(1, 1, 1, 0.5, 1, 1, 1, 0)
     local bubbles = {
-        position = { x = 195, y = 280 },
+        position = { x = 500, y = 360 },
         particles = {
             system = bubbleParticles,
             layer = -1,
@@ -315,14 +314,16 @@ function Game:restart()
 
     local bigBubbleSystem = bubbleParticles:clone()
     bigBubbleSystem:setTexture(ASSETS.bubble6x6)
-    bigBubbleSystem:setEmissionRate(0.5)
+    bigBubbleSystem:setEmissionRate(3.0)
     local bigBubbles = {
-        position = { x = 195, y = 280 },
+        position = {},
         particles = {
             system = bigBubbleSystem,
             layer = -1,
         },
     }
+    bigBubbles.position.x = bubbles.position.x
+    bigBubbles.position.y = bubbles.position.y
 
     local smallBubbles = bubbleParticles:clone()
     smallBubbles:setEmissionArea('uniform', 2, 2)
@@ -331,7 +332,21 @@ function Game:restart()
     smallBubbles:setLinearAcceleration(-5, -2, 5, -12)
     smallBubbles:setTexture(ASSETS.bubble3x3)
     local pipeBubbles = {
-        position = { x = 267, y = 302 },
+        position = { x = 180, y = 443 },
+        particles = {
+            system = smallBubbles,
+            layer = 0,
+        },
+    }
+    local pipeBubbles2 = {
+        position = { x = 450, y = 173 },
+        particles = {
+            system = smallBubbles,
+            layer = 0,
+        },
+    }
+    local pipeBubbles3 = {
+        position = { x = 890, y = 200 },
         particles = {
             system = smallBubbles,
             layer = 0,
@@ -378,6 +393,8 @@ function Game:restart()
     self.entityPool:put(jelly2)
     self.entityPool:put(bubbles)
     self.entityPool:put(pipeBubbles)
+    self.entityPool:put(pipeBubbles2)
+    self.entityPool:put(pipeBubbles3)
     self.entityPool:put(bigBubbles)
 
     self.handles.player = self.entityPool:put(player)
@@ -1156,27 +1173,6 @@ function Game:draw()
         end
     end)
 
-    local left, top = Camera.x, Camera.y
-    local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
-
-    left  = math.floor(left / 8) - 1
-    right = math.floor(right / 8) + 1
-    top   = math.floor(top / 8) - 1
-    bot   = math.floor(bot / 8) + 1
-
-    for y = top, bot do
-        for x = left, right do
-            local tileId = Map.get(x, y)
-            local quad = self.getTileQuad(tileId)
-            local tx, ty = 8*x, 8*y
-            if not Map.isWater(tileId, 0) then
-                love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
-            end
-            local deco = Map.get(x, y, 'decorations')
-            love.graphics.draw(ASSETS.tilesheet, self.getTileQuad(deco), lume.round(tx), lume.round(ty))
-        end
-    end
-
     self.entityPool:foreach(function(e, ref)
         if not e.position then
             return
@@ -1206,6 +1202,27 @@ function Game:draw()
             love.graphics.setShader()
         end
     end)
+
+    local left, top = Camera.x, Camera.y
+    local right, bot = Camera.x + SCREEN.WIDTH, Camera.y + SCREEN.HEIGHT
+
+    left  = math.floor(left / 8) - 1
+    right = math.floor(right / 8) + 1
+    top   = math.floor(top / 8) - 1
+    bot   = math.floor(bot / 8) + 1
+
+    for y = top, bot do
+        for x = left, right do
+            local tileId = Map.get(x, y)
+            local quad = self.getTileQuad(tileId)
+            local tx, ty = 8*x, 8*y
+            if not Map.isWater(tileId, 0) and not table.contains(WORLD.TILE.TOP_WATER, tileId) then
+                love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
+            end
+            local deco = Map.get(x, y, 'decorations')
+            love.graphics.draw(ASSETS.tilesheet, self.getTileQuad(deco), lume.round(tx), lume.round(ty))
+        end
+    end
 
     self.entityPool:foreach(function(e, ref)
         if not e.position then
