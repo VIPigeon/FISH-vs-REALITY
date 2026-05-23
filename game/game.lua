@@ -898,6 +898,10 @@ function Game:update()
                 e.color = COLOR.RED
             end
 
+            if e.rigidbody.transition == TRANSITION.WATER_TO_LAND then
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y * 1.2
+            end
+
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
