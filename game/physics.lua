@@ -59,7 +59,7 @@ function Physics.is_on_ground(position, hitbox)
     local collision = Physics.check_collision_rect_tilemap(
         Hitbox.to_rect(hitbox, position.x, position.y + 0.1)
     )
-    return collision ~= nil
+    return collision ~= nil, collision
 end
 
 
@@ -70,12 +70,16 @@ function Physics.move_x(position, hitbox, delta)
 
     local tilemap_collision = Physics.check_collision_rect_tilemap(rect_after_x_move)
     if tilemap_collision ~= nil then
-        local left = next_x + hitbox.offset_x
-        local right = left + hitbox.width
-        if right > 8 + tilemap_collision.x and left < 8 + tilemap_collision.x then
-            next_x = tilemap_collision.x + 8 - hitbox.offset_x
+        if tilemap_collision.glass then
+            next_x = position.x
         else
-            next_x = tilemap_collision.x - hitbox.width - hitbox.offset_x
+            local left = next_x + hitbox.offset_x
+            local right = left + hitbox.width
+            if right > 8 + tilemap_collision.x and left < 8 + tilemap_collision.x then
+                next_x = tilemap_collision.x + 8 - hitbox.offset_x
+            else
+                next_x = tilemap_collision.x - hitbox.width - hitbox.offset_x
+            end
         end
     end
 
@@ -97,12 +101,16 @@ function Physics.move_y(position, hitbox, delta)
 
     local tilemap_collision = Physics.check_collision_rect_tilemap(rect_after_y_move)
     if tilemap_collision ~= nil then
-        local top = next_y + hitbox.offset_y
-        local bottom = top + hitbox.height
-        if bottom > 8 + tilemap_collision.y and top < 8 + tilemap_collision.y then
-            next_y = tilemap_collision.y + 8 - hitbox.offset_y
+        if tilemap_collision.glass then
+            next_y = position.y
         else
-            next_y = tilemap_collision.y - hitbox.height - hitbox.offset_y
+            local top = next_y + hitbox.offset_y
+            local bottom = top + hitbox.height
+            if bottom > 8 + tilemap_collision.y and top < 8 + tilemap_collision.y then
+                next_y = tilemap_collision.y + 8 - hitbox.offset_y
+            else
+                next_y = tilemap_collision.y - hitbox.height - hitbox.offset_y
+            end
         end
     end
 
@@ -130,13 +138,40 @@ function Physics.check_collision_rect_tilemap(rect)
     local tile_x2 = math.floor((x2 + 0.99) / 8)
     local tile_y2 = math.floor((y2 + 0.99) / 8)
 
+    function doesCollide(tx, ty)
+        local id = Map.get(tx, ty)
+        if id == 214 then
+            local glassRect = Rect:new(8*tx, 8*ty, 1, 8)
+            if Physics.check_collision_rect_rect(rect, glassRect) then
+                return {
+                    glass = true,
+                    x = 8*tx,
+                    y = 8*ty,
+                }
+            end
+        elseif id == 215 then
+            local glassRect = Rect:new(8*tx+7, 8*ty, 1, 8)
+            if Physics.check_collision_rect_rect(rect, glassRect) then
+                return {
+                    glass = true,
+                    x = 8*tx,
+                    y = 8*ty,
+                }
+            end
+        elseif Map.isSolid(tx, ty) then
+            return {
+                x = 8 * tx,
+                y = 8 * ty,
+            }
+        end
+        return nil
+    end
+
     while y <= y2 do
         while x <= x2 do
-            if Map.isSolid(tile_x, tile_y) then
-                return {
-                    x = 8 * tile_x,
-                    y = 8 * tile_y,
-                }
+            local collision = doesCollide(tile_x, tile_y)
+            if collision then
+                return collision
             end
 
             tile_x = tile_x + 1
@@ -149,16 +184,19 @@ function Physics.check_collision_rect_tilemap(rect)
         tile_x = Map.worldToTileX(x)
     end
 
-    if Map.isSolid(tile_x2, tile_y1) then
-        return { x = 8 * tile_x2, y = 8 * tile_y1 }
+    local collision = doesCollide(tile_x2, tile_y1)
+    if collision then
+        return collision
     end
 
-    if Map.isSolid(tile_x1, tile_y2) then
-        return { x = 8 * tile_x1, y = 8 * tile_y2 }
+    local collision = doesCollide(tile_x1, tile_y2)
+    if collision then
+        return collision
     end
 
-    if Map.isSolid(tile_x2, tile_y2) then
-        return { x = 8 * tile_x2, y = 8 * tile_y2 }
+    local collision = doesCollide(tile_x2, tile_y2)
+    if collision then
+        return collision
     end
 
     return nil

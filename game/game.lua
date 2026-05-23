@@ -810,9 +810,18 @@ function Game:update()
             end
 
 
-            local onGround = Physics.is_on_ground(e.position, e.hitbox)
+            local onGround, collision = Physics.is_on_ground(e.position, e.hitbox)
             if onGround and e.player.oxygen <= 0 then
                 self:killPlayer()
+            end
+
+            if onGround then
+                local tileX = math.floor(collision.x/8)
+                local tileY = math.floor(collision.y/8)
+
+                if table.contains(WORLD.TILE.GLASS, Map.get(tileX, tileY)) then
+                    e.rigidbody.velocity.y = 50
+                end
             end
 
             if not e.player.stunnedTimer:elapsed() then
