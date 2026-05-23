@@ -140,6 +140,13 @@ function Game:createDefaultPlayer()
     -- end
     update_hitbox_by_frame(player)
 
+    self.music = ASSETS.music
+    self.music:setLooping(true)
+    self.music:setVolume(0.0)
+    self.music:play()
+    self.musicTimer = Timer:new(2.0)
+    self.musicVolume = 0.5
+
     local jump_type = player.player.jump.bucket[1]
     player.player.jump.t = PLAYER.JUMP[jump_type].T
     table.shuffle(player.player.jump.bucket)
@@ -603,8 +610,12 @@ function Game:update()
 
         if e.player then
             if Map.isWater(tile, centerY) then
+                self.musicTimer:tick()
+                self.music:setVolume(self.musicVolume * self.musicTimer:progress())
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
             else
+                self.musicTimer:tick()
+                self.music:setVolume(self.musicVolume * (1 - self.musicTimer:progress()))
                 e.player.oxygen = Time.tick(e.player.oxygen)
             end
 
@@ -745,6 +756,7 @@ function Game:update()
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
+                self.musicTimer:restart()
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
                     if waterEntity.water.surface then

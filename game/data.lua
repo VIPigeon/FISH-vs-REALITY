@@ -345,6 +345,8 @@ GRAVITY = 200
 ASSETS = {}
 
 function ASSETS:loadAll()
+    self.music = love.audio.newSource('content/music.mp3', 'static')
+
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
     self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')

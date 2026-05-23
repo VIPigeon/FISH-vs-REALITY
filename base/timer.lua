@@ -27,6 +27,11 @@ function Timer:timeElapsed()
 end
 
 
+function Timer:progress()
+    return 1 - self.currentTime / self.duration
+end
+
+
 function Timer:restart()
     self.currentTime = self.duration
 end
