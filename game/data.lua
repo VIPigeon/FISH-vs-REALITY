@@ -52,6 +52,7 @@ COLOR = {
 
     WINE = lume.color('#6c5671'),
     PURPLE = lume.color('#b0a9e4'),
+    GREY = lume.color('#d9c8bf'),
     --
 }
 COLOR.BACKGROUND = COLOR.WINE
@@ -81,7 +82,7 @@ ROTATE_180 =              math.pi
 
 
 PLAYER = {
-    TIME_AT_MAX_SPEED_TO_REACH_TOP_SPEED = 1.5,
+    TIME_AT_MAX_SPEED_TO_REACH_TOP_SPEED = 1.4,
     SUPER_VELOCITY_GRACE_TIME = 0.5,
     STUN_CLICK_SHAKE_DURATION = 0.1,
     CLICKS_TILL_UNSTUN = 15,
@@ -89,8 +90,8 @@ PLAYER = {
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
     GROUND_ACCELERATION = 36,
-    MAX_VELOCITY = 133,
-    MAX_SUPER_VELOCITY = 200,
+    MAX_VELOCITY = 111,
+    MAX_SUPER_VELOCITY = 140,
 
     SPAWN_X = 17*8,
     SPAWN_Y = 9*8,
@@ -103,8 +104,8 @@ PLAYER = {
         -- MAX_FORCE = 5800,
         -- F — Force 😎
         short = {T=0, F=1550 * 1.8 * 0.016},
-        middle = {T=0.15, F=2660 * 1.8 * 0.016},
-        high = {T=0.15, F=4777 * 1.2 * 0.016},
+        middle = {T=0.15, F=2700 * 1.8 * 0.016},
+        high = {T=0.15, F=4877 * 1.2 * 0.016},
 
         BUCKET = {
             'short',
@@ -114,12 +115,12 @@ PLAYER = {
             'short',
             'short',
             'short',
-            'short',
-            'short',
             'middle',
             'middle',
             'middle',
             'middle',
+            'middle',
+            'high',
             'high',
             'high',
         },
@@ -154,7 +155,7 @@ PLAYER = {
             'none', -- перезагружаем по none
         },
     },
-    OXYGEN = 15, -- время жизни без воды (секунды)
+    OXYGEN = 12, -- время жизни без воды (секунды)
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
 }
 
@@ -266,38 +267,38 @@ function JELLY._get_dash(x, y)
     local tile = Map.get(x, y, 'spawn')
     local STEP = 3
     if tile == JELLY.markers.small_spawn.down or tile == JELLY.markers.small_dash.down then
-        return 'd...', x, y+STEP
+        return 'd..', x, y+STEP
     elseif tile == JELLY.markers.small_spawn.up or tile == JELLY.markers.small_dash.up then
-        return 'u...', x, y-STEP
+        return 'u..', x, y-STEP
     elseif tile == JELLY.markers.small_spawn.left or tile == JELLY.markers.small_dash.left then
-        return 'l...', x-STEP, y
+        return 'l..', x-STEP, y
     elseif tile == JELLY.markers.small_spawn.right or tile == JELLY.markers.small_dash.right then
-        return 'r...', x+STEP, y
+        return 'r..', x+STEP, y
 
     elseif tile == JELLY.markers.big_spawn.down or tile == JELLY.markers.big_dash.down then
         y = y + 1
         while not JELLY._is_dash_mark(x, y) do
             y = y + 1
         end
-        return '..D.', x, y
+        return 'D..', x, y
     elseif tile == JELLY.markers.big_spawn.up or tile == JELLY.markers.big_dash.up then
         y = y - 1
         while not JELLY._is_dash_mark(x, y) do
             y = y - 1
         end
-        return '..U.', x, y
+        return 'U..', x, y
     elseif tile == JELLY.markers.big_spawn.left or tile == JELLY.markers.big_dash.left then
         x = x - 1
         while not JELLY._is_dash_mark(x, y) do
             x = x - 1
         end
-        return '..L.', x, y
+        return 'L..', x, y
     elseif tile == JELLY.markers.big_spawn.right or tile == JELLY.markers.big_dash.right then
         x = x + 1
         while not JELLY._is_dash_mark(x, y) do
             x = x + 1
         end
-        return '..R.', x, y
+        return 'R..', x, y
     end
 end
 

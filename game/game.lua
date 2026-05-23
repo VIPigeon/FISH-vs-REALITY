@@ -801,7 +801,7 @@ function Game:update()
 
             if not Map.isWater(tile, centerY) then
                 local a = e.sprite.animation
-                if not string.find(a, '2') and not string.find(a, 'agony') then
+                if (not string.find(a, '2') or e.sprite.animations[a].status == 'paused') and not string.find(a, 'agony') then
                     e.sprite.animation = 'agony_'..(e.direction)
                 end
             elseif string.find(e.sprite.animation, 'agony') then
@@ -889,17 +889,17 @@ function Game:update()
             end
 
             if not e.player.stunnedTimer:elapsed() then
-                e.color = COLOR.PURPLE
+                e.color = COLOR.BRIGHTEST
             elseif e.player.oxygen < PLAYER.OXYGEN / 4 then
-                e.color = COLOR.BLUE
+                e.color = COLOR.GREY
             elseif e.player.oxygen < PLAYER.OXYGEN / 2 then
-                e.color = COLOR.LIGHT_BLUE
+                e.color = COLOR.PURPLE
             else
                 e.color = COLOR.RED
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND then
-                e.rigidbody.velocity.y = e.rigidbody.velocity.y * 1.2
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y * 1.3
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
