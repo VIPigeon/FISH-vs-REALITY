@@ -275,8 +275,19 @@ function Game:restart()
                       -- Handles это прикольная тема, можно почитать тут:
                       -- https://floooh.github.io/2018/06/17/handles-vs-pointers.html
     self.handles.water = {}
+    self.handles.cutscenePlayer = {}
+    self.handles.playerDeadBody = {}
 
     local player = Game:createDefaultPlayer()
+
+    local endgameRect = {
+        color = COLOR.RED,
+        endgameRect = {},
+        position = { x = 17*8, y = 2*8 },
+        rect = Rect:new(19*8, 2*8, 8, 16),
+    }
+
+    self.entityPool:put(endgameRect)
 
     local mollusk = {
         position = { x = 456, y = 176 },
@@ -627,6 +638,25 @@ function Game:update()
                     end
                 else
                     e.color[4] = 0
+                end
+            end
+        end
+
+        if e.endgameRect then
+            local player, ok = self.entityPool:get(self.handles.player)
+            if ok then
+                local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
+                if Physics.check_collision_rect_rect(playerRect, e.rect) then
+                    cutscenePlayer = {
+                        position = { x = player.position.x, y = player.position.y },
+                        hitbox = table.deepcopy(player.hitbox),
+                        rigidbody = table.deepcopy(player.rigidbody),
+                        sprite = table.deepcopy(player.sprite),
+                        cutscenePlayer = {}
+                    }
+                    cutscenePlayer.rigidbody.groundBounce = 1
+                    self.entityPool:delete(self.handles.player)
+                    self.handles.cutscenePlayer = self.entityPool:put(cutscenePlayer)
                 end
             end
         end
@@ -1053,7 +1083,12 @@ function Game:update()
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
                 if collisionY ~= nil then
-                    e.rigidbody.velocity.y = 0
+                    if e.rigidbody.groundBounce then
+                        e.rigidbody.velocity.x = 30
+                        e.rigidbody.velocity.y = 80
+                    else
+                        e.rigidbody.velocity.y = 0
+                    end
                 end
 
                 local onGround = Physics.is_on_ground(e.position, e.hitbox)
@@ -1065,7 +1100,7 @@ function Game:update()
                     end
                 end
 
-                if onGround and e.rigidbody.acceleration.y == 0 then
+                if not e.rigidbody.groundBounce and onGround and e.rigidbody.acceleration.y == 0 then
                     e.rigidbody.velocity.y = 0
                 end
 
@@ -1268,8 +1303,16 @@ function Game:update()
         end
     end)
 
-    local player = self.entityPool:get(self.handles.player)
-    if player then
+    local player, ok = self.entityPool:get(self.handles.player)
+    if not ok then
+        local deadBody, ok = self.entityPool:get(self.handles.playerDeadBody)
+        if not ok then
+            local cutscenePlayer, ok = self.entityPool:get(self.handles.cutscenePlayer)
+            Camera:update(cutscenePlayer.position, deltaTime)
+        else
+            Camera:update(deadBody.position, deltaTime)
+        end
+    else
         Camera:update(player.position, deltaTime)
     end
 end
@@ -1277,12 +1320,6 @@ end
 
 function Game:draw()
     Camera:beginDraw()
-
-    local player, ok = self.entityPool:get(self.handles.player)
-    if not ok then
-        player, ok = self.entityPool:get(self.handles.playerDeadBody)
-        assert(ok)
-    end
 
     self.entityPool:foreach(function(e, ref)
         local x, y = e.position.x, e.position.y
