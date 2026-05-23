@@ -46,7 +46,7 @@ function Game:createDefaultPlayer()
         },
         player = {
             maxVelocityTime = CountingTimer:new(),
-            maxVelocityGrace = Timer:new(0.3),
+            maxVelocityGrace = Timer:new(PLAYER.SUPER_VELOCITY_GRACE_TIME),
             maxVelocity = 0.0,
             oxygen = PLAYER.OXYGEN,
             jump = {
@@ -769,11 +769,13 @@ function Game:update()
         end
 
         if e.player then
-            e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity, e.player.maxVelocity)
-            e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -e.player.maxVelocity, e.player.maxVelocity)
+            if Map.isWater(tile, e.position.y) then
+                e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity, e.player.maxVelocity)
+                e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -e.player.maxVelocity, e.player.maxVelocity)
+            end
 
             local vl = vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y)
-            if vl >= 0.9*PLAYER.MAX_VELOCITY then
+            if vl >= 0.7*PLAYER.MAX_VELOCITY then
                 e.player.maxVelocityTime:tick(deltaTime)
                 e.player.maxVelocityGrace:restart()
             else
@@ -807,7 +809,9 @@ function Game:update()
                 self.entityPool:put(ripple)
             end
 
-            if e.player.oxygen <= 0 then
+
+            local onGround = Physics.is_on_ground(e.position, e.hitbox)
+            if onGround and e.player.oxygen <= 0 then
                 self:killPlayer()
             end
 
