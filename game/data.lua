@@ -16,28 +16,45 @@ CAMERA = {
 
 -- Цвет в формате {r, g, b, a (optional)}
 -- https://love2d.org/wiki/love.graphics.setColor
+-- COLOR = {
+--     WHITE = lume.color('rgb(255, 255, 255)'),
+--     BLACK = lume.color('rgb(0, 0, 0)'),
+
+--     PURPLE = lume.color('#46425e'),
+--     BLUE = lume.color('#15788c'),
+--     LIGHT_BLUE = lume.color('#00b9be'),
+--     RED = lume.color('#ff6973'),
+--     LIGHT_RED = lume.color('#ffb0a3'),
+--     BRIGHTEST = lume.color('#ffeecc'),
+--     BACKGROUND = lume.color('#413e52'),
+
+--     -- Gameboy палитра.
+--     -- У меня не работает Lospec, и это единственное что я знаю.
+--     GAMEBOY = {
+--         BACKGROUND = lume.color('rgb(202, 220, 159)'), 
+--         DARK = lume.color('rgb(15, 56, 15)'),
+--         GRAY = lume.color('rgb(48, 98, 48)'),
+--         NEUTRAL = lume.color('rgb(139, 172, 15)'),
+--         LIGHT = lume.color('rgb(155, 188, 15)'),
+--     }
+-- }
 COLOR = {
     WHITE = lume.color('rgb(255, 255, 255)'),
     BLACK = lume.color('rgb(0, 0, 0)'),
 
-    PURPLE = lume.color('#46425e'),
-    BLUE = lume.color('#15788c'),
-    LIGHT_BLUE = lume.color('#00b9be'),
-    RED = lume.color('#ff6973'),
-    LIGHT_RED = lume.color('#ffb0a3'),
-    BRIGHTEST = lume.color('#ffeecc'),
-    BACKGROUND = lume.color('#413e52'),
+    -- палитра
+    RED = lume.color('#f98284'),
+    LIGHT_RED = lume.color('#feaae4'), -- pink
+    BLUE = lume.color('#accce4'),
+    LIGHT_BLUE = lume.color('#b3e3da'),
+    DARKEST = lume.color('#28282e'),
+    BRIGHTEST = lume.color('#fff7e4'),
 
-    -- Gameboy палитра.
-    -- У меня не работает Lospec, и это единственное что я знаю.
-    GAMEBOY = {
-        BACKGROUND = lume.color('rgb(202, 220, 159)'), 
-        DARK = lume.color('rgb(15, 56, 15)'),
-        GRAY = lume.color('rgb(48, 98, 48)'),
-        NEUTRAL = lume.color('rgb(139, 172, 15)'),
-        LIGHT = lume.color('rgb(155, 188, 15)'),
-    }
+    WINE = lume.color('#6c5671'),
+    PURPLE = lume.color('#b0a9e4'),
+    --
 }
+COLOR.BACKGROUND = COLOR.WINE
 
 
 KEYBINDS = {
@@ -72,11 +89,11 @@ PLAYER = {
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
     GROUND_ACCELERATION = 36,
-    MAX_VELOCITY = 100,
-    MAX_SUPER_VELOCITY = 160,
+    MAX_VELOCITY = 133,
+    MAX_SUPER_VELOCITY = 200,
 
-    SPAWN_X = 40,
-    SPAWN_Y = 80,
+    SPAWN_X = 17*8,
+    SPAWN_Y = 9*8,
 
     MIN_V_FOR_BOUNCE = 30,
     JUMP = {
@@ -337,8 +354,8 @@ WORLD = {
         TOP_WATER = { 32 },
     },
 
-    WATER_COLOR_TOP = lume.color('#0e505d'),
-    WATER_COLOR_BOTTOM = lume.color('#00b9be'),
+    WATER_COLOR_TOP = COLOR.BLUE,
+    WATER_COLOR_BOTTOM = COLOR.LIGHT_BLUE,
 }
 
 MICRO_FISH_SPAWN_TILE = 224
