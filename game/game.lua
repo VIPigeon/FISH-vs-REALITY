@@ -282,11 +282,18 @@ function Game:restart()
 
     local endgameRect = {
         color = COLOR.RED,
-        endgameRect = {},
-        position = { x = 17*8, y = 2*8 },
-        rect = Rect:new(19*8, 2*8, 8, 16),
+        ACTUAL_CUTSCENE_RECT = {},
+        position = { x = 3*8, y = 25*8 },
+        rect = Rect:new(3*8, 25*8, 7*8, 16),
     }
 
+    local endCutsceneRect = {
+        endgameRect = {},
+        position = { x = 1*8, y = 19*8 },
+        rect = Rect:new(1*8, 19*8, 10*8, 8),
+    }
+
+    self.entityPool:put(endCutsceneRect)
     self.entityPool:put(endgameRect)
 
     local mollusk = {
@@ -655,8 +662,35 @@ function Game:update()
                         cutscenePlayer = {}
                     }
                     cutscenePlayer.rigidbody.groundBounce = 1
+                    self.entityPool:delete(ref)
                     self.entityPool:delete(self.handles.player)
                     self.handles.cutscenePlayer = self.entityPool:put(cutscenePlayer)
+                end
+            end
+        end
+
+        if e.ACTUAL_CUTSCENE_RECT then
+            local player, ok = self.entityPool:get(self.handles.cutscenePlayer)
+            if ok then
+                local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
+                if Physics.check_collision_rect_rect(playerRect, e.rect) then
+                    self.entityPool:delete(ref)
+                    for i = 1, 10 do
+                        local microFish = {
+                            position = {
+                                x = player.position.x + math.random(-16, 16),
+                                y = player.position.y + math.random(-16, 16),
+                            },
+                            sprite = {
+                                animation = 1,
+                                animations = {
+                                    anim8.newAnimation(ASSETS.microFishGrid('1-11', 1), 0.2, 'pauseAtEnd'), 
+                                },
+                                spritesheet = ASSETS.microFish,
+                            },
+                        }
+                        self.entityPool:put(microFish)
+                    end
                 end
             end
         end

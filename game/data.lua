@@ -354,6 +354,7 @@ function ASSETS:loadAll()
 
     self.cut = love.graphics.newImage('content/cut.png')
 
+    self.microFish = love.graphics.newImage('content/micro-fish.png')
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
     self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')
@@ -368,6 +369,7 @@ function ASSETS:loadAll()
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
 
+    self.microFishGrid = anim8.newGrid(16, 16, self.microFish:getPixelWidth(), self.microFish:getPixelHeight())
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
     self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
     self.cutGrid = anim8.newGrid(16, 16, self.cut:getPixelWidth(), self.cut:getPixelHeight())
