@@ -45,6 +45,9 @@ function Game:createDefaultPlayer()
             y = PLAYER.SPAWN_Y,
         },
         player = {
+            maxVelocityTime = CountingTimer:new(),
+            maxVelocityGrace = Timer:new(0.3),
+            maxVelocity = 0.0,
             oxygen = PLAYER.OXYGEN,
             jump = {
                 -- багоопасно. копирование по ссылке. ебануть не должно
@@ -144,7 +147,7 @@ function Game:createDefaultPlayer()
     self.music:setLooping(true)
     self.music:setVolume(0.0)
     self.music:play()
-    self.musicTimer = Timer:new(2.0)
+    self.musicTimer = 0
     self.musicVolume = 0.5
 
     local jump_type = player.player.jump.bucket[1]
@@ -301,6 +304,23 @@ function Game:restart()
             mollusk.sprite.animation = 1
         end,
     }
+
+    local cut = {
+        position = { x = 0, y = 0 },
+        cut = {},
+        color = table.deepcopy(COLOR.WHITE),
+        sprite = {
+            spritesheet = ASSETS.cut,
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.cutGrid('1-2', 1), 0.1),
+                anim8.newAnimation(ASSETS.cutGrid('1-2', 2), 0.1),
+                anim8.newAnimation(ASSETS.cutGrid('1-2', 3), 0.1),
+                anim8.newAnimation(ASSETS.cutGrid('1-2', 4), 0.1),
+            },
+        },
+    }
+    self.entityPool:put(cut)
 
     self.entityPool:put(mollusk)
 
@@ -582,6 +602,35 @@ function Game:update()
             tile = Map.get(tileX, tileY)
         end
 
+        if e.cut then
+            local player, ok = self.entityPool:get(self.handles.player)
+            if ok and player.player.maxVelocity > PLAYER.MAX_VELOCITY then
+                local playerX = player.position.x + player.hitbox.offset_x + player.hitbox.width / 2
+                local playerY = player.position.y + player.hitbox.offset_y + player.hitbox.height / 2
+                tileX, tileY = Map.worldToTile(playerX, playerY)
+                if Map.isWater(Map.get(tileX, tileY), playerY) then
+                    e.color[4] = math.max(0, 0.1 * (vectorLength(player.rigidbody.velocity.x, player.rigidbody.velocity.y) - 60) / PLAYER.MAX_VELOCITY)
+                    e.position.x = player.position.x
+                    e.position.y = player.position.y
+                    if math.abs(player.rigidbody.velocity.x) > math.abs(player.rigidbody.velocity.y) then
+                        if player.rigidbody.velocity.x > 0 then
+                            e.sprite.animation = 1
+                        else
+                            e.sprite.animation = 3
+                        end
+                    else
+                        if player.rigidbody.velocity.y > 0 then
+                            e.sprite.animation = 2
+                        else
+                            e.sprite.animation = 4
+                        end
+                    end
+                else
+                    e.color[4] = 0
+                end
+            end
+        end
+
         if e.checkpoint then
             local player, ok = self.entityPool:get(self.handles.player)
             if ok then
@@ -610,14 +659,13 @@ function Game:update()
 
         if e.player then
             if Map.isWater(tile, centerY) then
-                self.musicTimer:tick()
-                self.music:setVolume(self.musicVolume * self.musicTimer:progress())
+                self.musicTimer = math.min(2.0, self.musicTimer + deltaTime)
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
             else
-                self.musicTimer:tick()
-                self.music:setVolume(self.musicVolume * (1 - self.musicTimer:progress()))
+                self.musicTimer = math.max(0.0, self.musicTimer - deltaTime)
                 e.player.oxygen = Time.tick(e.player.oxygen)
             end
+            self.music:setVolume(self.musicVolume * self.musicTimer / 2.0)
 
             if self.debug.godmode then
                 e.player.oxygen = PLAYER.OXYGEN
@@ -721,8 +769,25 @@ function Game:update()
         end
 
         if e.player then
-            e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
-            e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -PLAYER.MAX_VELOCITY, PLAYER.MAX_VELOCITY)
+            e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity, e.player.maxVelocity)
+            e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -e.player.maxVelocity, e.player.maxVelocity)
+
+            local vl = vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y)
+            if vl >= 0.9*PLAYER.MAX_VELOCITY then
+                e.player.maxVelocityTime:tick(deltaTime)
+                e.player.maxVelocityGrace:restart()
+            else
+                e.player.maxVelocityGrace:tick()
+                if e.player.maxVelocityGrace:elapsed() then
+                    e.player.maxVelocityTime:reset()
+                end
+            end
+
+            if e.player.maxVelocityTime.duration > PLAYER.TIME_AT_MAX_SPEED_TO_REACH_TOP_SPEED then
+                e.player.maxVelocity = PLAYER.MAX_SUPER_VELOCITY
+            else
+                e.player.maxVelocity = PLAYER.MAX_VELOCITY
+            end
 
             e.player.spawnRippleTimer:tick()
             if Map.isWater(tile, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 80 then
@@ -738,6 +803,7 @@ function Game:update()
                     },
                     death = Timer:new(0.5),
                 }
+
                 self.entityPool:put(ripple)
             end
 
@@ -756,7 +822,6 @@ function Game:update()
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
-                self.musicTimer:restart()
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
                     if waterEntity.water.surface then
@@ -1308,6 +1373,8 @@ function Game:draw()
             love.graphics.draw(e.particles.system, x + 4, y + 4)
             love.graphics.setColor(COLOR.WHITE)
         end
+
+        love.graphics.setColor(COLOR.WHITE)
     end)
 
     Camera:endDraw()

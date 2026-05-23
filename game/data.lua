@@ -64,13 +64,16 @@ ROTATE_180 =              math.pi
 
 
 PLAYER = {
+    TIME_AT_MAX_SPEED_TO_REACH_TOP_SPEED = 1.5,
+    SUPER_VELOCITY_GRACE_TIME = 0.5,
     STUN_CLICK_SHAKE_DURATION = 0.1,
     CLICKS_TILL_UNSTUN = 15,
     WATER_ACCELERATION = 210,
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
     GROUND_ACCELERATION = 36,
-    MAX_VELOCITY = 140,
+    MAX_VELOCITY = 100,
+    MAX_SUPER_VELOCITY = 160,
 
     SPAWN_X = 40,
     SPAWN_Y = 80,
@@ -347,6 +350,8 @@ ASSETS = {}
 function ASSETS:loadAll()
     self.music = love.audio.newSource('content/music.mp3', 'static')
 
+    self.cut = love.graphics.newImage('content/cut.png')
+
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
     self.bubble3x3 = love.graphics.newImage('content/bubble3x3.png')
@@ -363,6 +368,7 @@ function ASSETS:loadAll()
 
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
     self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
+    self.cutGrid = anim8.newGrid(16, 16, self.cut:getPixelWidth(), self.cut:getPixelHeight())
 
     self.tilemap = love.filesystem.load('content/tilemap/map.lua')() -- <- Загружаем lua файл и тут же его исполняем. Наверное? Я не уверен зачем это
 
