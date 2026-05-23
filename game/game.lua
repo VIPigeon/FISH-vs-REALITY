@@ -678,7 +678,7 @@ function Game:update()
 
             if not Map.isWater(tile, centerY) then
                 local a = e.sprite.animation
-                if e.sprite.animations[a].status == 'paused' then
+                if not string.find(a, '2') and not string.find(a, 'agony') then
                     e.sprite.animation = 'agony_'..(e.direction)
                 end
             elseif string.find(e.sprite.animation, 'agony') then
