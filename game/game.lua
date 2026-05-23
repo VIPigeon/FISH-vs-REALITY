@@ -146,7 +146,7 @@ function Game:createDefaultPlayer()
     self.music = ASSETS.music
     self.music:setLooping(true)
     self.music:setVolume(0.0)
-    self.music:play()
+    -- self.music:play()
     self.musicTimer = 0
     self.musicVolume = 0.5
 
