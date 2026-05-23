@@ -363,26 +363,68 @@ function Game:restart()
     }
     local checkpoints = {
         {
-            position = { x = 96, y = 56, },
+            position = { x = 6*8, y = 25*8, },
             checkpoint = {
                 active = false,
             },
             sprite = table.copy(checkpointSprite),
         },
         {
-            position = { x = 176, y = 40, },
+            position = { x = 50*8, y = 32*8, },
             checkpoint = {
                 active = false,
             },
             sprite = table.copy(checkpointSprite),
         },
         {
-            position = { x = 248, y = 40, },
+            position = { x =110*8, y = 25*8, },
             checkpoint = {
                 active = false,
             },
             sprite = table.copy(checkpointSprite),
         },
+        {
+            position = { x = 170*8, y = 25*8, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+        {
+            position = { x = 206*8, y = 25*8, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+        {
+            position = { x = 253*8, y = 32*8, },
+            checkpoint = {
+                active = false,
+            },
+            sprite = table.copy(checkpointSprite),
+        },
+        -- {
+        --     position = { x = 96, y = 56, },
+        --     checkpoint = {
+        --         active = false,
+        --     },
+        --     sprite = table.copy(checkpointSprite),
+        -- },
+        -- {
+        --     position = { x = 176, y = 40, },
+        --     checkpoint = {
+        --         active = false,
+        --     },
+        --     sprite = table.copy(checkpointSprite),
+        -- },
+        -- {
+        --     position = { x = 248, y = 40, },
+        --     checkpoint = {
+        --         active = false,
+        --     },
+        --     sprite = table.copy(checkpointSprite),
+        -- },
     }
 
 
@@ -905,18 +947,18 @@ function Game:update()
 
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    if math.abs(e.rigidbody.velocity.x) < 75 then
-                        local v = e.rigidbody.velocity.x
-                        local V = PLAYER.MIN_V_FOR_BOUNCE
-                        if e.rigidbody.velocity.x > 0 then
-                            v = math.max(v, V)
-                        else
-                            v = math.min(v, -V)
-                        end
-                        e.rigidbody.velocity.x = -1 * v
-                    else
+                    -- if math.abs(e.rigidbody.velocity.x) < 75 then
+                    --     local v = e.rigidbody.velocity.x
+                    --     local V = PLAYER.MIN_V_FOR_BOUNCE
+                    --     if e.rigidbody.velocity.x > 0 then
+                    --         v = math.max(v, V)
+                    --     else
+                    --         v = math.min(v, -V)
+                    --     end
+                    --     e.rigidbody.velocity.x = -1 * v
+                    -- else
                         e.rigidbody.velocity.x = -1 * PLAYER.WALL_BOUNCE * e.rigidbody.velocity.x
-                    end
+                    -- end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)

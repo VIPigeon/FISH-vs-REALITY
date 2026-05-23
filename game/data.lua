@@ -75,16 +75,16 @@ PLAYER = {
     SPAWN_X = 40,
     SPAWN_Y = 80,
 
-    MIN_V_FOR_BOUNCE = 39,
+    MIN_V_FOR_BOUNCE = 30,
     JUMP = {
         -- MIN_T = 0.1,
         -- MAX_T = 1.1,
         -- MIN_FORCE = 800,
         -- MAX_FORCE = 5800,
         -- F — Force 😎
-        short = {T=0, F=1500 * 1.8 * 0.016},
-        middle = {T=0.2, F=2400 * 1.8 * 0.016},
-        high = {T=0.2, F=4400 * 1.2 * 0.016},
+        short = {T=0, F=1550 * 1.8 * 0.016},
+        middle = {T=0.15, F=2660 * 1.8 * 0.016},
+        high = {T=0.15, F=4777 * 1.2 * 0.016},
 
         BUCKET = {
             'short',
@@ -96,18 +96,11 @@ PLAYER = {
             'short',
             'short',
             'short',
-            'short',
-            'short',
-            'short',
-            'short',
-            'short',
             'middle',
             'middle',
             'middle',
             'middle',
-            'middle',
-            'middle',
-            'middle',
+            'high',
             'high',
         },
 
@@ -141,7 +134,7 @@ PLAYER = {
             'none', -- перезагружаем по none
         },
     },
-    OXYGEN = 15, -- время жизни без воды (секунды)
+    OXYGEN = 17.5, -- время жизни без воды (секунды)
     OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
 }
 
@@ -196,7 +189,7 @@ JELLY = {
     DASH_STRENGTH = 119,
     BIG_DASH_STRENGTH = 120,
     -- TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
-    TICK_FREQUENCY = 0.5, -- Раз в 0.5 секунд переходим на следующую команду в программе
+    TICK_FREQUENCY = 0.375,
     DASH_COOLDOWN = 3,
 
     STUN_TIME = 5,
@@ -253,38 +246,38 @@ function JELLY._get_dash(x, y)
     local tile = Map.get(x, y, 'spawn')
     local STEP = 3
     if tile == JELLY.markers.small_spawn.down or tile == JELLY.markers.small_dash.down then
-        return 'd', x, y+STEP
+        return 'd...', x, y+STEP
     elseif tile == JELLY.markers.small_spawn.up or tile == JELLY.markers.small_dash.up then
-        return 'u', x, y-STEP
+        return 'u...', x, y-STEP
     elseif tile == JELLY.markers.small_spawn.left or tile == JELLY.markers.small_dash.left then
-        return 'l', x-STEP, y
+        return 'l...', x-STEP, y
     elseif tile == JELLY.markers.small_spawn.right or tile == JELLY.markers.small_dash.right then
-        return 'r', x+STEP, y
+        return 'r...', x+STEP, y
 
     elseif tile == JELLY.markers.big_spawn.down or tile == JELLY.markers.big_dash.down then
         y = y + 1
         while not JELLY._is_dash_mark(x, y) do
             y = y + 1
         end
-        return 'D', x, y
+        return '..D.', x, y
     elseif tile == JELLY.markers.big_spawn.up or tile == JELLY.markers.big_dash.up then
         y = y - 1
         while not JELLY._is_dash_mark(x, y) do
             y = y - 1
         end
-        return 'U', x, y
+        return '..U.', x, y
     elseif tile == JELLY.markers.big_spawn.left or tile == JELLY.markers.big_dash.left then
         x = x - 1
         while not JELLY._is_dash_mark(x, y) do
             x = x - 1
         end
-        return 'L', x, y
+        return '..L.', x, y
     elseif tile == JELLY.markers.big_spawn.right or tile == JELLY.markers.big_dash.right then
         x = x + 1
         while not JELLY._is_dash_mark(x, y) do
             x = x + 1
         end
-        return 'R', x, y
+        return '..R.', x, y
     end
 end
 
@@ -298,7 +291,7 @@ function JELLY.build_program(x, y)
         symbol, x, y = JELLY._get_dash(x, y)
         table.insert(program, symbol)
     end
-    return table.concat(program, '..')..'..' -- потом будем думать
+    return table.concat(program)
 end
 
 SHRIMP_COLORS = {
