@@ -38,6 +38,7 @@ function update_hitbox_by_frame(e)
     end
 end
 
+global_player_max_x_achieved = PLAYER.SPAWN_X
 function Game:createDefaultPlayer()
     local player = {
         position = {
@@ -49,12 +50,11 @@ function Game:createDefaultPlayer()
             maxVelocityGrace = Timer:new(PLAYER.SUPER_VELOCITY_GRACE_TIME),
             maxVelocity = 0.0,
             oxygen = PLAYER.OXYGEN,
-            count_deaths = 0,
+            max_x_achieved = global_player_max_x_achieved,
             jump = {
                 -- багоопасно. копирование по ссылке. ебануть не должно
                 -- bucket = PLAYER.JUMP.BUCKET,
                 -- i = 1,
-                patience = 0, -- терпение игрока
                 t = 0,
 
                 x_i = 1,
@@ -907,13 +907,20 @@ function Game:update()
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
                     end
                 else
+                    global_player_max_x_achieved = math.max(global_player_max_x_achieved, e.position.x)
                     local onGround = Physics.is_on_ground(e.position, e.hitbox)
                     if onGround then -- автопрыжок только на земле
                         e.player.jump.t = Time.tick(e.player.jump.t)
                         if e.player.jump.t == 0 then
                             -- прыжок
                             -- Y
-                            local P = math.max(0.05, math.min(0.95, (e.player.count_deaths / PLAYER.MAX_DEATHS + 0.2) * ((PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN + 0.2)))
+                            local P
+                            if e.position.x > e.player.max_x_achieved then
+                                P = 0.3 * (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
+                            else
+                                P = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
+                            end
+                            print(e.player.max_x_achieved, P)
                             local ball = math.random()
                             local jump_type = 'short'
                             if ball < P then
