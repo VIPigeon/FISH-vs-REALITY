@@ -64,6 +64,8 @@ KEYBINDS = {
     ACTION_LEFT  = { keys = {'a', 'left'} },
     ACTION_RIGHT = { keys = {'d', 'right'} },
     JUMP         = { keys = {'w', 'up', 'space'} },
+
+    COUNT_DEATH = {keys={'f'}},
 }
 for k, v in pairs(KEYBINDS) do
     KEYBINDS[k].name = string.lower(k)
@@ -93,8 +95,12 @@ PLAYER = {
     MAX_VELOCITY = 111,
     MAX_SUPER_VELOCITY = 140,
 
-    SPAWN_X = 300*8,
-    SPAWN_Y = 50*8,
+    -- SPAWN_X = 300*8,  -- конец
+    -- SPAWN_Y = 50*8,
+    MAX_DEATHS = 15,  -- количество смертей, после которого мы будем максимально помогать игроку
+
+    SPAWN_X = 17*8,
+    SPAWN_Y = 9*8,
 
     MIN_V_FOR_BOUNCE = 30,
     JUMP = {
@@ -104,59 +110,39 @@ PLAYER = {
         -- MAX_FORCE = 5800,
         -- F — Force 😎
         short = {T=0, F=1550 * 1.8 * 0.016},
-        middle = {T=0.15, F=2700 * 1.8 * 0.016},
-        high = {T=0.15, F=4877 * 1.2 * 0.016},
+        -- middle = {T=0.15, F=2400 * 1.8 * 0.016},
+        high = {T=0.2, F=4777 * 1.2 * 0.016},
 
-        BUCKET = {
-            'short',
-            'short',
-            'short',
-            'short',
-            'short',
-            'short',
-            'short',
-            'middle',
-            'middle',
-            'middle',
-            'middle',
-            'middle',
-            'high',
-            'high',
-            'high',
-        },
+        -- BUCKET = {
+        --     'short',
+        --     'short',
+        --     'short',
+        --     'short',
+        --     'short',
+        --     'short',
+        --     'short',
+        --     'middle',
+        --     'middle',
+        --     'middle',
+        --     'middle',
+        --     'middle',
+        --     'high',
+        --     'high',
+        --     'high',
+        -- },
 
         X_DRIFT = {
-            ['small'] = 99*1.8*0.016,
-            ['big'] = 222*1.8*0.016,
+            ['small'] = 111*1.8*0.016,
+            ['big'] = 222*1.8*0.016, -- в бане
         },
         X_BUCKET = {
             'small-back',
-            'small-back',
-            'small-back',
-            'small-back',
-            'small-back',
-            'small-back',
-            'small-back',
-            'big-back',
-            'big-back',
-
             'small-front',
-            'small-front',
-            'small-front',
-            'small-front',
-            'small-front',
-            'small-front',
-            'big-front',
-            'big-front',
-            'big-front',
-            'big-front',
-            'big-front',
-
             'none', -- перезагружаем по none
         },
     },
-    OXYGEN = 12, -- время жизни без воды (секунды)
-    OXYGEN_INCOME = 10, -- скорость восстановления кислорода в воде (в секунду)
+    OXYGEN = 11, -- время жизни без воды (секунды)
+    OXYGEN_INCOME = 9, -- скорость восстановления кислорода в воде (в секунду)
 }
 
 FISH = {

@@ -49,10 +49,12 @@ function Game:createDefaultPlayer()
             maxVelocityGrace = Timer:new(PLAYER.SUPER_VELOCITY_GRACE_TIME),
             maxVelocity = 0.0,
             oxygen = PLAYER.OXYGEN,
+            count_deaths = 0,
             jump = {
                 -- багоопасно. копирование по ссылке. ебануть не должно
-                bucket = PLAYER.JUMP.BUCKET,
-                i = 1,
+                -- bucket = PLAYER.JUMP.BUCKET,
+                -- i = 1,
+                patience = 0, -- терпение игрока
                 t = 0,
 
                 x_i = 1,
@@ -150,9 +152,9 @@ function Game:createDefaultPlayer()
     self.musicTimer = 0
     self.musicVolume = 0.5
 
-    local jump_type = player.player.jump.bucket[1]
-    player.player.jump.t = PLAYER.JUMP[jump_type].T
-    table.shuffle(player.player.jump.bucket)
+    -- local jump_type = player.player.jump.bucket[1]
+    -- player.player.jump.t = PLAYER.JUMP[jump_type].T
+    -- table.shuffle(player.player.jump.bucket)
 
     return player
 end
@@ -874,6 +876,11 @@ function Game:update()
             e.shake.offset_x = 0
             e.shake.offset_y = 0
 
+            if Input.isJustPressed(KEYBINDS.COUNT_DEATH) then
+                e.player.count_deaths = e.player.count_deaths + 1
+                -- print(e.player.count_deaths)
+            end
+
             if e.player.stunnedTimer:elapsed() then
                 if self.debug.godmode or Map.isWater(tile, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
@@ -902,17 +909,14 @@ function Game:update()
                         if e.player.jump.t == 0 then
                             -- прыжок
                             -- Y
-                            local jump_type = e.player.jump.bucket[e.player.jump.i]
-                            e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
-
-                            if jump_type == 'high' then
-                                table.shuffle(e.player.jump.bucket)
-                                e.player.jump.i = 1
-                            else
-                                e.player.jump.i = e.player.jump.i + 1
-                                -- таймер на следующий прыжок
+                            local P = math.max(0.05, math.min(0.95, (e.player.count_deaths / PLAYER.MAX_DEATHS + 0.2) * ((PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN + 0.2)))
+                            local ball = math.random()
+                            local jump_type = 'short'
+                            if ball < P then
+                                jump_type = 'high'
                             end
-                            jump_type = e.player.jump.bucket[e.player.jump.i]
+                            -- local jump_type = e.player.jump.bucket[e.player.jump.i]
+                            e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
                             e.player.jump.t = PLAYER.JUMP[jump_type].T
 
                             -- дрифт по горизонатли во время прыжка
