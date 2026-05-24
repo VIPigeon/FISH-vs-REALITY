@@ -484,7 +484,7 @@ extern vec4 colorTop;
 extern vec4 colorBottom;
 
 vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
-    vec4 result = mix(colorTop, colorBottom, texture_coords.y);
+    vec4 result = mix(colorTop, colorBottom, texture_coords.x);
     return result;
 }
 ]],
