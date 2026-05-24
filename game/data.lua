@@ -102,7 +102,7 @@ PLAYER = {
     SPAWN_X = 17*8,
     SPAWN_Y = 9*8,
 
-    MIN_V_FOR_BOUNCE = 30,
+    MIN_V_FOR_BOUNCE = 28,
     JUMP = {
         -- MIN_T = 0.1,
         -- MAX_T = 1.1,

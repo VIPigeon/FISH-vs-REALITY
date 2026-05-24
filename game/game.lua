@@ -116,6 +116,8 @@ function Game:createDefaultPlayer()
                 agony_down = anim8.newAnimation(ASSETS.fishGrid('1-4', 8), FISH.AGONY_TIME_PER_FRAME),
             },
             spritesheet = ASSETS.fishSpritesheet,
+
+            shadow = {color=COLOR.WINE},
         },
 
         rigidbody = {
@@ -194,6 +196,8 @@ function Game:spawn_jelly(x, y, direction)
                 left_release = anim8.newAnimation(ASSETS.jellyGrid('5-6', 4), JELLY.TIME_PER_FRAME, 'pauseAtEnd'),
             },
             spritesheet = ASSETS.jellySpritesheet,
+
+            shadow = {color=COLOR.PURPLE}
         },
         jelly = {
             program = JELLY.build_program(x, y), -- в тайлах
@@ -1057,18 +1061,18 @@ function Game:update()
 
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
-                    -- if math.abs(e.rigidbody.velocity.x) < 75 then
-                    --     local v = e.rigidbody.velocity.x
-                    --     local V = PLAYER.MIN_V_FOR_BOUNCE
-                    --     if e.rigidbody.velocity.x > 0 then
-                    --         v = math.max(v, V)
-                    --     else
-                    --         v = math.min(v, -V)
-                    --     end
-                    --     e.rigidbody.velocity.x = -1 * v
-                    -- else
+                    if math.abs(e.rigidbody.velocity.x) < 75 then
+                        local v = e.rigidbody.velocity.x
+                        local V = PLAYER.MIN_V_FOR_BOUNCE
+                        if e.rigidbody.velocity.x > 0 then
+                            v = math.max(v, V)
+                        else
+                            v = math.min(v, -V)
+                        end
+                        e.rigidbody.velocity.x = -1 * v
+                    else
                         e.rigidbody.velocity.x = -1 * PLAYER.WALL_BOUNCE * e.rigidbody.velocity.x
-                    -- end
+                    end
                 end
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
@@ -1146,8 +1150,8 @@ function Game:update()
 
                 local nextCommand = e.jelly.program:char(nextCommandIndex)
                 local nextCommandBig = nextCommand ~= '.' and isUpper(nextCommand)
-                if nextCommandBig then
-                    e.color = COLOR.LIGHT_RED
+                if nextCommandBig then -- Telltale if
+                    e.color = COLOR.BRIGHTEST
                 else
                     e.color = COLOR.BRIGHTEST
                 end
@@ -1196,7 +1200,7 @@ function Game:update()
                 end
 
                 if nextCommandBig then
-                    e.color = COLOR.LIGHT_RED
+                    e.color = COLOR.BRIGHTEST
                 else
                     -- e.color = COLOR.LIGHT
                     e.color = COLOR.BRIGHTEST
@@ -1427,10 +1431,10 @@ function Game:draw()
 
         local x, y = e.position.x, e.position.y
 
-        -- тень рыбы
-        if e.fish then
+        -- тень
+        if e.sprite and e.sprite.shadow then
             local animation = e.sprite.animations[e.sprite.animation]
-            love.graphics.setColor(COLOR.WINE)
+            love.graphics.setColor(e.sprite.shadow.color)
             if e.shake then
                 animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y + 1)
             else
