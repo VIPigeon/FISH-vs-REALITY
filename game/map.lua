@@ -5,6 +5,7 @@ function Map.init(tilemap)
     Map.terrain = tilemap.layers[1]
     Map.spawn = tilemap.layers[2]
     Map.decorations = tilemap.layers[3]
+    Map.water = tilemap.layers[4]
 end
 
 function Map.get(tileX, tileY, layer)
@@ -22,8 +23,9 @@ function Map.get(tileX, tileY, layer)
 end
 
 
-function Map.isWater(tileId, y)
+function Map.isWater(tileX, tileY, y)
     assert(y ~= nil)
+    local tileId = Map.get(tileX, tileY, 'water')
     if table.contains(WORLD.TILE.TOP_WATER, tileId) then
         local floor = math.floor(y / 8)
         return y > 1 + 8*floor

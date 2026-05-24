@@ -420,19 +420,22 @@ function Game:restart()
     for x = 0, Map.terrain.width - 1 do
         for y = 0, Map.terrain.height - 1 do
             if not table.contains(used, y*Map.terrain.width+x) then
-                local tile = Map.get(x, y)
+                local tile = Map.get(x, y, 'water')
                 local isWater = table.contains(WORLD.TILE.WATER, tile)
                 local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
                 if isWater and not isSurface then
-                    for ty = y, Map.terrain.height - 1 do
+                    local ty = y
+                    while table.contains(WORLD.TILE.WATER, Map.get(x, ty, 'water')) do
                         table.insert(used, ty*Map.terrain.width+x)
+                        ty = ty + 1
                     end
-                    table.insert(used, y*Map.terrain.width + x)
+                    table.insert(used, ty*Map.terrain.width + x)
+
                     local water = {
                         position = { x = 8*x, y = 8*y },
                         water = {
                             width = 8,
-                            height = WORLD.WATER_MAX_HEIGHT - 8*y,
+                            height = 8*(ty - y),
                         },
                     }
                     self.entityPool:put(water)
@@ -445,11 +448,11 @@ function Game:restart()
     for y = 0, Map.terrain.height - 1 do
         for x = 0, Map.terrain.width - 1 do
             if not table.contains(used, y*Map.terrain.width+x) then
-                local tile = Map.get(x, y)
+                local tile = Map.get(x, y, 'water')
                 local isSurface = table.contains(WORLD.TILE.TOP_WATER, tile)
                 if isSurface then
                     local tx = x
-                    while table.contains(WORLD.TILE.TOP_WATER, Map.get(tx, y)) do
+                    while table.contains(WORLD.TILE.TOP_WATER, Map.get(tx, y, 'water')) do
                         table.insert(used, y*Map.terrain.width + tx)
                         tx = tx + 1
                     end
@@ -481,26 +484,28 @@ function Game:killPlayer()
     local player, ok = self.entityPool:get(self.handles.player)
     assert(ok)
 
-    local deathParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
-    deathParticles:setParticleLifetime(0.3, 1.0)
-    deathParticles:setEmissionRate(10.0)
-    
-    deathParticles:setLinearAcceleration(-60, -60, 60, 60) -- Random movement in all directions.
-    deathParticles:setColors(1, 1, 1, 1, 1, 1, 1, 0) -- Fade to transparency.
-
     local playerDeadBody = {
         position = { x = player.position.x, y = player.position.y },
         rigidbody = table.deepcopy(player.rigidbody),
         hitbox = table.deepcopy(player.hitbox),
         rectangle = table.deepcopy(player.rectangle),
         playerDeadBody = {
-            respawnTimer = Timer:new(2.0),
+            respawnTimer = Timer:new(3.0),
         },
-        particles = {
-            layer = 1,
-            system = deathParticles,
+        color = COLOR.GREY,
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.fishGrid('1-5', 10), 0.2),
+                anim8.newAnimation(ASSETS.fishGrid('1-5', 11), 0.2),
+            },
+            spritesheet = ASSETS.fishSpritesheet,
         },
     }
+
+    if string.find(player.sprite.animation, "right") then
+        playerDeadBody.sprite.animation = 2
+    end
 
     self.entityPool:delete(self.handles.player)
     self.handles.playerDeadBody = self.entityPool:put(playerDeadBody)
@@ -545,7 +550,7 @@ function Game:update()
                 local playerX = player.position.x + player.hitbox.offset_x + player.hitbox.width / 2
                 local playerY = player.position.y + player.hitbox.offset_y + player.hitbox.height / 2
                 tileX, tileY = Map.worldToTile(playerX, playerY)
-                if Map.isWater(Map.get(tileX, tileY), playerY) then
+                if Map.isWater(tileX, tileY, playerY) then
                     e.color[4] = math.max(0, 0.1 * (vectorLength(player.rigidbody.velocity.x, player.rigidbody.velocity.y) - 60) / PLAYER.MAX_VELOCITY)
                     e.position.x = player.position.x
                     e.position.y = player.position.y
@@ -599,8 +604,8 @@ function Game:update()
                     for i = 1, 10 do
                         local microFish = {}
                         microFish.position = {
-                            x = player.position.x + math.random(-32, 32),
-                            y = player.position.y + math.random(-32, 32),
+                            x = player.position.x + math.random(16, 64),
+                            y = player.position.y + math.random(-24, 24),
                         }
                         microFish.color = COLOR.RED
                         microFish.color.a = 0.5
@@ -671,7 +676,7 @@ function Game:update()
         end
 
         if e.player then
-            if Map.isWater(tile, centerY) then
+            if Map.isWater(tileX, tileY, centerY) then
                 self.musicTimer = math.min(2.0, self.musicTimer + deltaTime)
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
             else
@@ -686,7 +691,7 @@ function Game:update()
         end
 
         if e.player then
-            if Map.isWater(tile, e.position.y) then
+            if Map.isWater(tileX, tileY, e.position.y) then
                 Game.lastWaterPosition.x = e.position.x
                 Game.lastWaterPosition.y = e.position.y
             end
@@ -753,7 +758,7 @@ function Game:update()
                 end
             end
 
-            if not Map.isWater(tile, centerY) then
+            if not Map.isWater(tileX, tileY, centerY) then
                 local a = e.sprite.animation
                 if (not string.find(a, '2') or e.sprite.animations[a].status == 'paused') and not string.find(a, 'agony') then
                     e.sprite.animation = 'agony_'..(e.direction)
@@ -787,7 +792,7 @@ function Game:update()
         end
 
         if e.player then
-            if Map.isWater(tile, e.position.y) then
+            if Map.isWater(tileX, tileY, e.position.y) then
                 e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity, e.player.maxVelocity)
                 e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -e.player.maxVelocity, e.player.maxVelocity)
             end
@@ -810,7 +815,7 @@ function Game:update()
             end
 
             e.player.spawnRippleTimer:tick()
-            if Map.isWater(tile, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 100 then
+            if Map.isWater(tileX, tileY, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 100 then
                 e.player.spawnRippleTimer:restart()
                 local ripple = {
                     position = { x = e.position.x, y = e.position.y },
@@ -859,7 +864,9 @@ function Game:update()
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
-                    if waterEntity.water.surface then
+                    local waterLeft = waterEntity.position.x
+                    local waterRight = waterEntity.position.x + waterEntity.water.width
+                    if waterEntity.position.y - 8 < e.position.y and waterLeft < e.position.x and e.position.x < waterRight then
                         local impactX = (e.position.x + e.hitbox.offset_x + e.hitbox.width / 2) - waterEntity.position.x
 
                         waterEntity.water.waveTimer:restart()
@@ -886,7 +893,7 @@ function Game:update()
             end
 
             if e.player.stunnedTimer:elapsed() then
-                if self.debug.godmode or Map.isWater(tile, centerY) then
+                if self.debug.godmode or Map.isWater(tileX, tileY, centerY) then
                     if Input.isDown(KEYBINDS.ACTION_UP) then
                         e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
                     end
@@ -1007,7 +1014,7 @@ function Game:update()
         end
 
         if e.rigidbody then
-            local wereWeInWaterAtStart = Map.isWater(tile, centerY)
+            local wereWeInWaterAtStart = Map.isWater(tileX, tileY, centerY)
 
             if e.player and self.debug.godmode then
                 e.position.x = e.position.x + e.rigidbody.velocity.x * deltaTime
@@ -1028,7 +1035,7 @@ function Game:update()
                 end
                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + e.rigidbody.acceleration.x * deltaTime
                 e.rigidbody.velocity.y = e.rigidbody.velocity.y + e.rigidbody.acceleration.y * deltaTime
-            elseif Map.isWater(tile, centerY) then
+            elseif Map.isWater(tileX, tileY, centerY) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
                     if math.abs(e.rigidbody.velocity.x) < 75 then
@@ -1111,7 +1118,8 @@ function Game:update()
 
             local nextCenterX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
             local nextCenterY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
-            local areWeInWater = Map.isWater(Map.get(Map.worldToTile(nextCenterX, nextCenterY)), nextCenterY)
+            local tx, ty = Map.worldToTile(nextCenterX, nextCenterY)
+            local areWeInWater = Map.isWater(tx, ty, nextCenterY)
 
             if areWeInWater and not wereWeInWaterAtStart then
                 e.rigidbody.transition = TRANSITION.LAND_TO_WATER
@@ -1284,7 +1292,7 @@ function Game:update()
             tile = Map.get(tileX, tileY)
         end
 
-        if e.cutscenePlayer and Map.isWater(tile, e.position.y) then
+        if e.cutscenePlayer and Map.isWater(tileX, tileY, e.position.y) then
             e.sprite.animation = 'right'
             e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
             if math.abs(e.rigidbody.velocity.x) < 10 then
@@ -1394,6 +1402,7 @@ function Game:draw()
             ASSETS.waterShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
             e.water.surfaceShader:send('y', e.position.y+8)
             e.water.surfaceShader:send('height', 8)
+            --e.water.surfaceShader:send('width', e.water.width)
             e.water.surfaceShader:send('colorTop', WORLD.WATER_COLOR_TOP)
             e.water.surfaceShader:send('colorBottom', WORLD.WATER_COLOR_BOTTOM)
             if not e.water.waveTimer:elapsed() then
@@ -1423,7 +1432,7 @@ function Game:draw()
             local tileId = Map.get(x, y)
             local quad = self.getTileQuad(tileId)
             local tx, ty = 8*x, 8*y
-            if not Map.isWater(tileId, 0) and not table.contains(WORLD.TILE.TOP_WATER, tileId) then
+            if not Map.isWater(x, y, 0) and not table.contains(WORLD.TILE.TOP_WATER, tileId) then
                 love.graphics.draw(ASSETS.tilesheet, quad, lume.round(tx), lume.round(ty))
             end
             local deco = Map.get(x, y, 'decorations')

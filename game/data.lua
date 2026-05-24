@@ -362,6 +362,8 @@ function ASSETS:loadAll()
 
     self.cut = love.graphics.newImage('content/cut.png')
 
+    self.fishSkeleton = love.graphics.newImage('content/fish-skeleton.png')
+
     self.microFish = love.graphics.newImage('content/micro-fish.png')
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
@@ -377,6 +379,7 @@ function ASSETS:loadAll()
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
 
+    self.fishSkeletonGrid = anim8.newGrid(16, 16, self.fishSkeleton:getPixelWidth(), self.fishSkeleton:getPixelHeight())
     self.microFishGrid = anim8.newGrid(16, 16, self.microFish:getPixelWidth(), self.microFish:getPixelHeight())
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
     self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
@@ -420,6 +423,7 @@ SHADERS_SOURCES = {
 waterSurface = [[
 extern number y;
 extern number height;
+extern number width;
 extern vec4 colorTop;
 extern vec4 colorBottom;
 
