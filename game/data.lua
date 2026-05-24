@@ -93,8 +93,8 @@ PLAYER = {
     MAX_VELOCITY = 111,
     MAX_SUPER_VELOCITY = 140,
 
-    SPAWN_X = 17*8,
-    SPAWN_Y = 9*8,
+    SPAWN_X = 300*8,
+    SPAWN_Y = 50*8,
 
     MIN_V_FOR_BOUNCE = 30,
     JUMP = {
@@ -324,7 +324,7 @@ WORLD = {
     WIDTH = 999,
     HEIGHT = 999,
 
-    WATER_MAX_HEIGHT = 400 + 17*8,
+    WATER_MAX_HEIGHT = 800 + 17*8,
 
     -- Что, думаешь это просто случайные магические числа?
     --

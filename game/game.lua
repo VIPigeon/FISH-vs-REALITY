@@ -281,16 +281,16 @@ function Game:restart()
     local player = Game:createDefaultPlayer()
 
     local endgameRect = {
-        color = COLOR.RED,
         ACTUAL_CUTSCENE_RECT = {},
-        position = { x = 3*8, y = 25*8 },
-        rect = Rect:new(3*8, 25*8, 7*8, 16),
+        position = { x = 305*8, y = 65*8 },
+        rect = Rect:new(305*8, 65*8, 100*8, 100*8),
     }
 
+    -- Для включения падения с лестницы
     local endCutsceneRect = {
         endgameRect = {},
-        position = { x = 1*8, y = 19*8 },
-        rect = Rect:new(1*8, 19*8, 10*8, 8),
+        position = { x = 261*8, y = 35*8 },
+        rect = Rect:new(261*8, 35*8, 7*8, 16),
     }
 
     self.entityPool:put(endCutsceneRect)
@@ -659,7 +659,9 @@ function Game:update()
                         hitbox = table.deepcopy(player.hitbox),
                         rigidbody = table.deepcopy(player.rigidbody),
                         sprite = table.deepcopy(player.sprite),
-                        cutscenePlayer = {}
+                        cutscenePlayer = {
+                            stopTimer = Timer:new(6.0),
+                        },
                     }
                     cutscenePlayer.rigidbody.groundBounce = 1
                     self.entityPool:delete(ref)
@@ -670,28 +672,66 @@ function Game:update()
         end
 
         if e.ACTUAL_CUTSCENE_RECT then
-            local player, ok = self.entityPool:get(self.handles.cutscenePlayer)
+            local player, ok = self.entityPool:get(self.handles.player)
             if ok then
                 local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
                 if Physics.check_collision_rect_rect(playerRect, e.rect) then
                     self.entityPool:delete(ref)
                     for i = 1, 10 do
-                        local microFish = {
-                            position = {
-                                x = player.position.x + math.random(-16, 16),
-                                y = player.position.y + math.random(-16, 16),
+                        local microFish = {}
+                        microFish.position = {
+                            x = player.position.x + math.random(-32, 32),
+                            y = player.position.y + math.random(-32, 32),
+                        }
+                        microFish.color = COLOR.RED
+                        microFish.color.a = 0.5
+                        microFish.cutsceneFish = {
+                            angle = 0,
+                            startX = microFish.position.x,
+                            startY = microFish.position.y,
+                        }
+                        microFish.rigidbody = {
+                            velocity = { x = 0, y = 0 },
+                            acceleration = { x = 0, y = 0 },
+                        }
+                        microFish.hitbox = {
+                            offset_x = 0,
+                            offset_y = 0,
+                            width = 1,
+                            height = 1,
+                        }
+                        microFish.sprite = {
+                            animation = 1,
+                            animations = {
+                                anim8.newAnimation(ASSETS.microFishGrid(1, 1), 0.1 + 2*math.random(), function()
+                                    microFish.sprite.animation = 2
+                                end), 
+                                anim8.newAnimation(ASSETS.microFishGrid('1-11', 1), 0.35, function()
+                                    microFish.sprite.animation = 3
+                                    microFish.sprite.spritesheet = ASSETS.fishSpritesheet
+                                end), 
+                                anim8.newAnimation(ASSETS.fishGrid('1-7', 1), 0.2, function()
+                                    microFish.sprite.animation = 4
+                                end), 
+                                anim8.newAnimation(ASSETS.fishGrid('13-14', 6), 0.2),
                             },
-                            sprite = {
-                                animation = 1,
-                                animations = {
-                                    anim8.newAnimation(ASSETS.microFishGrid('1-11', 1), 0.2, 'pauseAtEnd'), 
-                                },
-                                spritesheet = ASSETS.microFish,
-                            },
+                            spritesheet = ASSETS.microFish,
                         }
                         self.entityPool:put(microFish)
                     end
                 end
+            end
+        end
+
+        if e.cutsceneFish then
+            if e.sprite.animation == 4 then
+                e.rigidbody.velocity.x = 20 + math.random(-5, 5)
+            elseif e.sprite.animation == 2 then
+                e.cutsceneFish.angle = e.cutsceneFish.angle + math.pi/4 * deltaTime
+                local dx = 10 * (math.cos(e.cutsceneFish.angle) - 1)
+                local dy = 10 * math.sin(e.cutsceneFish.angle)
+                e.position.x = e.cutsceneFish.startX + dx
+                e.position.y = e.cutsceneFish.startY - dy
             end
         end
 
@@ -856,7 +896,7 @@ function Game:update()
             end
 
             e.player.spawnRippleTimer:tick()
-            if Map.isWater(tile, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 80 then
+            if Map.isWater(tile, 0) and e.player.spawnRippleTimer:elapsed() and vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y) > 100 then
                 e.player.spawnRippleTimer:restart()
                 local ripple = {
                     position = { x = e.position.x, y = e.position.y },
@@ -1309,6 +1349,43 @@ function Game:update()
     end)
 
     self.entityPool:foreach(function(e, ref)
+        local tile = 0
+        local tileX = -1
+        local tileY = -1
+        local centerX = -1
+        local centerY = -1
+        if e.position and e.hitbox then
+            centerX = e.position.x + e.hitbox.offset_x + e.hitbox.width / 2
+            centerY = e.position.y + e.hitbox.offset_y + e.hitbox.height / 2
+            tileX, tileY = Map.worldToTile(centerX, centerY)
+            tile = Map.get(tileX, tileY)
+        end
+
+        if e.cutscenePlayer and Map.isWater(tile, e.position.y) then
+            e.sprite.animation = 'right'
+            e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
+            if math.abs(e.rigidbody.velocity.x) < 10 then
+                e.rigidbody.velocity.x = 0
+            end
+
+            e.rigidbody.velocity.y = e.rigidbody.velocity.y * math.pow(WORLD.WATER_FRICTION, deltaTime)
+            if math.abs(e.rigidbody.velocity.y) < 10 then
+                e.rigidbody.velocity.y = 0
+            end
+
+            e.rigidbody.velocity.y = -30 * (1 - e.cutscenePlayer.stopTimer:progress())
+
+            e.cutscenePlayer.stopTimer:tick()
+            if e.cutscenePlayer.stopTimer:elapsed() then
+                self.entityPool:delete(ref)
+                local player = self:createDefaultPlayer()
+                self.handles.cutscenePlayer = {}
+                self.handles.player = self.entityPool:put(player)
+                player.position.x = e.position.x
+                player.position.y = e.position.y
+            end
+        end
+
         if (not self.debug.godmode and e.player) or e.jelly then
 
             update_hitbox_by_frame(e)
