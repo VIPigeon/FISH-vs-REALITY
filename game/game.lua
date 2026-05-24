@@ -278,6 +278,8 @@ function Game:restart()
     self.handles.cutscenePlayer = {}
     self.handles.playerDeadBody = {}
 
+    Game.lastWaterPosition = { x = 0, y = 0 }
+
     local player = Game:createDefaultPlayer()
 
     local endgameRect = {
@@ -398,84 +400,6 @@ function Game:restart()
         },
     }
 
-    local checkpointSprite = {
-        animation = 1,
-        animations = {
-            ASSETS.checkpointDisabledAnimation:clone(),
-            ASSETS.checkpointActiveAnimation:clone(),
-        },
-        spritesheet = ASSETS.checkpointSpritesheet,
-    }
-    local checkpoints = {
-        {
-            position = { x = 6*8, y = 25*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        {
-            position = { x = 50*8, y = 32*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        {
-            position = { x =110*8, y = 25*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        {
-            position = { x = 170*8, y = 25*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        {
-            position = { x = 206*8, y = 25*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        {
-            position = { x = 253*8, y = 32*8, },
-            checkpoint = {
-                active = false,
-            },
-            sprite = table.copy(checkpointSprite),
-        },
-        -- {
-        --     position = { x = 96, y = 56, },
-        --     checkpoint = {
-        --         active = false,
-        --     },
-        --     sprite = table.copy(checkpointSprite),
-        -- },
-        -- {
-        --     position = { x = 176, y = 40, },
-        --     checkpoint = {
-        --         active = false,
-        --     },
-        --     sprite = table.copy(checkpointSprite),
-        -- },
-        -- {
-        --     position = { x = 248, y = 40, },
-        --     checkpoint = {
-        --         active = false,
-        --     },
-        --     sprite = table.copy(checkpointSprite),
-        -- },
-    }
-
-
-    for _, checkpoint in ipairs(checkpoints) do
-        self.entityPool:put(checkpoint)
-    end
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
     self.entityPool:put(bubbles)
@@ -578,20 +502,9 @@ end
 
 
 function Game:respawnPlayer()
-    -- Находим самый правый чекпоинт
-    local respawnX, respawnY = PLAYER.SPAWN_X, PLAYER.SPAWN_Y
-    self.entityPool:foreach(function(e, ref)
-        if e.checkpoint and e.checkpoint.active then
-            if e.position.x > respawnX then
-                respawnX = e.position.x
-                respawnY = e.position.y
-            end
-        end
-    end)
-
     local newPlayer = self:createDefaultPlayer()
-    newPlayer.position.x = respawnX
-    newPlayer.position.y = respawnY
+    newPlayer.position.x = Game.lastWaterPosition.x
+    newPlayer.position.y = Game.lastWaterPosition.y
     self.handles.player = self.entityPool:put(newPlayer)
     self.entityPool:delete(self.handles.playerDeadBody)
 end
@@ -735,16 +648,6 @@ function Game:update()
             end
         end
 
-        if e.checkpoint then
-            local player, ok = self.entityPool:get(self.handles.player)
-            if ok then
-                if player.position.x > e.position.x then
-                    e.checkpoint.active = true
-                    e.sprite.animation = 2
-                end
-            end
-        end
-
         if e.microFish then
             if lume.distance(e.position.x, e.position.y, e.microFish.target.x, e.microFish.target.y) < 3 then
                 e.microFish.target.x = e.microFish.spawn.x + math.random(-8, 8)
@@ -777,6 +680,11 @@ function Game:update()
         end
 
         if e.player then
+            if Map.isWater(tile, e.position.y) then
+                Game.lastWaterPosition.x = e.position.x
+                Game.lastWaterPosition.y = e.position.y
+            end
+
             local direction = false
             local direction2 = false
             if Input.isDown(KEYBINDS.ACTION_DOWN) then
