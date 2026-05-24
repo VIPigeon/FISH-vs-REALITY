@@ -933,6 +933,7 @@ function Game:update()
                             if ball < P then
                                 jump_type = 'high'
                             end
+                            lume.randomchoice(ASSETS.sounds.wetPunch):play()
                             -- local jump_type = e.player.jump.bucket[e.player.jump.i]
                             e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
                             e.player.jump.t = PLAYER.JUMP[jump_type].T
@@ -1131,6 +1132,7 @@ function Game:update()
         end
 
         if e.playerDeadBody then
+            e.rigidbody.velocity.x = 0
             e.playerDeadBody.respawnTimer:tick()
             if e.playerDeadBody.respawnTimer:elapsed() then
                 self:respawnPlayer()
@@ -1366,6 +1368,12 @@ end
 
 function Game:draw()
     Camera:beginDraw()
+
+    ASSETS.gradientShader:send('colorTop', COLOR.WINE)
+    ASSETS.gradientShader:send('colorBottom', COLOR.BRIGHTEST)
+    love.graphics.setShader(ASSETS.gradientShader)
+    love.graphics.draw(ASSETS.whitePixel, Camera.x, Camera.y, 0, 240, 136)
+    love.graphics.setShader()
 
     self.entityPool:foreach(function(e, ref)
         local x, y = e.position.x, e.position.y

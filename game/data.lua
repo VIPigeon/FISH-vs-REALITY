@@ -360,9 +360,15 @@ ASSETS = {}
 function ASSETS:loadAll()
     self.music = love.audio.newSource('content/music.mp3', 'static')
 
-    self.cut = love.graphics.newImage('content/cut.png')
+    self.sounds = {}
+    self.sounds.wetPunch = {}
+    for i = 1, 14 do
+        local filepath = 'content/sfx/wet-punch-' .. tostring(i) .. '.mp3'
+        lume.trace(filepath)
+        table.insert(self.sounds.wetPunch, love.audio.newSource(filepath, 'static'))
+    end
 
-    self.fishSkeleton = love.graphics.newImage('content/fish-skeleton.png')
+    self.cut = love.graphics.newImage('content/cut.png')
 
     self.microFish = love.graphics.newImage('content/micro-fish.png')
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
@@ -379,7 +385,6 @@ function ASSETS:loadAll()
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
 
-    self.fishSkeletonGrid = anim8.newGrid(16, 16, self.fishSkeleton:getPixelWidth(), self.fishSkeleton:getPixelHeight())
     self.microFishGrid = anim8.newGrid(16, 16, self.microFish:getPixelWidth(), self.microFish:getPixelHeight())
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
     self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())
@@ -416,6 +421,7 @@ function ASSETS:loadAll()
 
     self.waterShader = love.graphics.newShader(SHADERS_SOURCES.water)
     self.waterSurfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface)
+    self.gradientShader = love.graphics.newShader(SHADERS_SOURCES.gradient)
 end
 
 SHADERS_SOURCES = {
@@ -470,6 +476,16 @@ vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
 
     vec4 gradientColor = vec4(mix(colorBottom.rgb, colorTop.rgb, gradientT), 1);
     return gradientColor;//vec4(gradientT, gradientT, 0, 1);
+}
+]],
+
+gradient = [[
+extern vec4 colorTop;
+extern vec4 colorBottom;
+
+vec4 effect(vec4 color, Image tex, vec2 texture_coords, vec2 screen_coords) {
+    vec4 result = mix(colorTop, colorBottom, texture_coords.y);
+    return result;
 }
 ]],
 
