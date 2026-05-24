@@ -382,12 +382,13 @@ function ASSETS:loadAll()
     self.sounds.wetPunch = {}
     for i = 1, 7 do
         local filepath = 'content/sfx/wet-punch-' .. tostring(i) .. '.mp3'
-        lume.trace(filepath)
         table.insert(self.sounds.wetPunch, love.audio.newSource(filepath, 'static'))
     end
 
     self.cut = love.graphics.newImage('content/cut.png')
 
+    self.board = love.graphics.newImage('content/board.png')
+    self.numbers = love.graphics.newImage('content/numbers.png')
     self.microFish = love.graphics.newImage('content/micro-fish.png')
     self.miniFish = love.graphics.newImage('content/mini-fish.png')
     self.mollusk = love.graphics.newImage('content/mollusk.png')
@@ -403,6 +404,8 @@ function ASSETS:loadAll()
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
 
+    self.boardGrid = anim8.newGrid(self.board:getPixelWidth(), self.board:getPixelHeight(), self.board:getPixelWidth(), self.board:getPixelHeight())
+    self.numbersGrid = anim8.newGrid(5, 6, self.numbers:getPixelWidth(), self.numbers:getPixelHeight())
     self.microFishGrid = anim8.newGrid(16, 16, self.microFish:getPixelWidth(), self.microFish:getPixelHeight())
     self.molluskGrid = anim8.newGrid(48, 16, self.mollusk:getPixelWidth(), self.mollusk:getPixelHeight())
     self.miniFishGrid = anim8.newGrid(5, 6, self.miniFish:getPixelWidth(), self.miniFish:getPixelHeight())

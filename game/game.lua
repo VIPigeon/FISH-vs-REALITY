@@ -276,6 +276,8 @@ function Game:restart()
     self.music:play()
     self.musicTimer = 0
 
+    self.playerDeathCount = 0
+
     self.entityPool = Pool:new()
     self.handles = {} -- Тут лежат ссылки на entities, если к ним нужен доступ
                       -- Handles это прикольная тема, можно почитать тут:
@@ -330,6 +332,77 @@ function Game:restart()
             mollusk.sprite.animation = 1
         end,
     }
+
+    local board = {
+        position = { x = (240 - 98) / 2, y = 0 },
+        ui = {},
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.boardGrid(1, 1), 0.5)
+            },
+            spritesheet = ASSETS.board,
+        },
+    }
+
+    local numberLeft = {
+        position = { x = (240 - 98) / 2 + 11, y = 17},
+        ui = {},
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.numbersGrid(1, 2), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(2, 2), 0.5),
+            },
+            spritesheet = ASSETS.numbers,
+        },
+    }
+
+    local numberRight1 = {
+        position = { x = (240 - 98) / 2 + 65, y = 17},
+        ui = {},
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.numbersGrid(1, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(2, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(3, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(4, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(5, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(6, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(7, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(8, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(9, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(10, 1), 0.5),
+            },
+            spritesheet = ASSETS.numbers,
+        },
+    }
+    local numberRight0 = {
+        position = { x = (240 - 98) / 2 + 71, y = 17},
+        ui = {},
+        sprite = {
+            animation = 1,
+            animations = {
+                anim8.newAnimation(ASSETS.numbersGrid(1, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(2, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(3, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(4, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(5, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(6, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(7, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(8, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(9, 1), 0.5),
+                anim8.newAnimation(ASSETS.numbersGrid(10, 1), 0.5),
+            },
+            spritesheet = ASSETS.numbers,
+        },
+    }
+
+    self.entityPool:put(board)
+    self.handles.numberLeft = self.entityPool:put(numberLeft)
+    self.handles.numberRight0 = self.entityPool:put(numberRight0)
+    self.handles.numberRight1 = self.entityPool:put(numberRight1)
 
     local cut = {
         position = { x = -200, y = -200 },
@@ -483,6 +556,12 @@ end
 function Game:killPlayer()
     ASSETS.sounds.death:play()
 
+    Game.playerDeathCount = Game.playerDeathCount + 1
+    local numberRight0 = self.entityPool:get(self.handles.numberRight0)
+    local numberRight1, ok = self.entityPool:get(self.handles.numberRight1)
+    numberRight1.sprite.animation = 1 + math.floor(Game.playerDeathCount / 10)
+    numberRight0.sprite.animation = 1 + Game.playerDeathCount - 10 * math.floor(Game.playerDeathCount / 10)
+
     local player, ok = self.entityPool:get(self.handles.player)
     assert(ok)
 
@@ -614,6 +693,9 @@ function Game:update()
                         ASSETS.music.ending:play()
                         ASSETS.music.gris:stop()
                     end
+
+                    local fishCounter = self.entityPool:get(self.handles.numberLeft)
+                    fishCounter.sprite.animation = 2
 
                     player.player.stopMoving = true
 
@@ -1523,6 +1605,11 @@ function Game:draw()
         end
 
         local x, y = e.position.x, e.position.y
+
+        if e.ui then
+            x = x + Camera.x
+            y = y + Camera.y
+        end
 
         -- тень
         if e.sprite and e.sprite.shadow then
