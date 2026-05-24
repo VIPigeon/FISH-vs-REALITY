@@ -798,6 +798,20 @@ function Game:update()
             end
 
             local vl = vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y)
+
+            if vl > 10 then
+                if not ASSETS.sounds.toiletWater:isPlaying() then
+                    ASSETS.sounds.toiletWater:play()
+                end
+                if Map.isWater(tileX, tileY, e.position.y) then
+                    ASSETS.sounds.toiletWater:setVolume(0.01)
+                else
+                    ASSETS.sounds.toiletWater:setVolume(0.0)
+                end
+            else
+                ASSETS.sounds.toiletWater:setVolume(0.0)
+            end
+
             if vl >= 0.7*PLAYER.MAX_VELOCITY then
                 e.player.maxVelocityTime:tick(deltaTime)
                 e.player.maxVelocityGrace:restart()
@@ -862,6 +876,12 @@ function Game:update()
             end
 
             if e.rigidbody.transition == TRANSITION.WATER_TO_LAND or e.rigidbody.transition == TRANSITION.LAND_TO_WATER then
+                if e.rigidbody.transition == TRANSITION.WATER_TO_LAND then
+                    ASSETS.sounds.water:play()
+                else
+                    ASSETS.sounds.impact:play()
+                end
+
                 for _, handle in ipairs(self.handles.water) do
                     local waterEntity = self.entityPool:get(handle)
                     local waterLeft = waterEntity.position.x
@@ -916,6 +936,9 @@ function Game:update()
                 else
                     global_player_max_x_achieved = math.max(global_player_max_x_achieved, e.position.x)
                     local onGround = Physics.is_on_ground(e.position, e.hitbox)
+                    if onGround and not e.rigidbody.wasOnGround then
+                        lume.randomchoice(ASSETS.sounds.wetPunch):play()
+                    end
                     if onGround then -- автопрыжок только на земле
                         e.player.jump.t = Time.tick(e.player.jump.t)
                         if e.player.jump.t == 0 then
@@ -933,7 +956,6 @@ function Game:update()
                             if ball < P then
                                 jump_type = 'high'
                             end
-                            lume.randomchoice(ASSETS.sounds.wetPunch):play()
                             -- local jump_type = e.player.jump.bucket[e.player.jump.i]
                             e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
                             e.player.jump.t = PLAYER.JUMP[jump_type].T
@@ -1016,6 +1038,8 @@ function Game:update()
 
         if e.rigidbody then
             local wereWeInWaterAtStart = Map.isWater(tileX, tileY, centerY)
+
+            e.rigidbody.wasOnGround = Physics.is_on_ground(e.position, e.hitbox)
 
             if e.player and self.debug.godmode then
                 e.position.x = e.position.x + e.rigidbody.velocity.x * deltaTime
@@ -1295,6 +1319,7 @@ function Game:update()
         end
 
         if e.cutscenePlayer and Map.isWater(tileX, tileY, e.position.y) then
+
             e.sprite.animation = 'right'
             e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
             if math.abs(e.rigidbody.velocity.x) < 10 then

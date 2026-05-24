@@ -361,8 +361,14 @@ function ASSETS:loadAll()
     self.music = love.audio.newSource('content/music.mp3', 'static')
 
     self.sounds = {}
+    self.sounds.toiletWater = love.audio.newSource('content/sfx/toilet-water.mp3', 'static')
+    self.sounds.toiletWater:setLooping(true)
+
+    self.sounds.water = love.audio.newSource('content/sfx/water.mp3', 'static')
+    self.sounds.impact = love.audio.newSource('content/sfx/wet-impact.mp3', 'static')
+
     self.sounds.wetPunch = {}
-    for i = 1, 14 do
+    for i = 1, 7 do
         local filepath = 'content/sfx/wet-punch-' .. tostring(i) .. '.mp3'
         lume.trace(filepath)
         table.insert(self.sounds.wetPunch, love.audio.newSource(filepath, 'static'))
