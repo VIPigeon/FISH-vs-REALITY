@@ -14,6 +14,8 @@ function Game:init()
         shotHitboxes = false,
     }
 
+    love.audio.setVolume(0.5)
+
     self:restart()
 end
 
@@ -147,13 +149,6 @@ function Game:createDefaultPlayer()
     -- end
     update_hitbox_by_frame(player)
 
-    self.music = ASSETS.music
-    self.music:setLooping(true)
-    self.music:setVolume(0.0)
-    -- self.music:play()
-    self.musicTimer = 0
-    self.musicVolume = 0.5
-
     -- local jump_type = player.player.jump.bucket[1]
     -- player.player.jump.t = PLAYER.JUMP[jump_type].T
     -- table.shuffle(player.player.jump.bucket)
@@ -276,6 +271,11 @@ end
 function Game:restart()
     math.randomseed(os.time()*1e7)
 
+    self.music = ASSETS.music.bg
+    self.music:setLooping(true)
+    self.music:play()
+    self.musicTimer = 0
+
     self.entityPool = Pool:new()
     self.handles = {} -- Тут лежат ссылки на entities, если к ним нужен доступ
                       -- Handles это прикольная тема, можно почитать тут:
@@ -290,8 +290,8 @@ function Game:restart()
 
     local endgameRect = {
         ACTUAL_CUTSCENE_RECT = {},
-        position = { x = 305*8, y = 65*8 },
-        rect = Rect:new(305*8, 65*8, 100*8, 100*8),
+        position = { x = 320*8, y = 65*8 },
+        rect = Rect:new(320*8, 65*8, 100*8, 100*8),
     }
 
     -- Для включения падения с лестницы
@@ -481,6 +481,8 @@ end
 
 
 function Game:killPlayer()
+    ASSETS.sounds.death:play()
+
     local player, ok = self.entityPool:get(self.handles.player)
     assert(ok)
 
@@ -582,7 +584,15 @@ function Game:update()
                         position = { x = player.position.x, y = player.position.y },
                         hitbox = table.deepcopy(player.hitbox),
                         rigidbody = table.deepcopy(player.rigidbody),
-                        sprite = table.deepcopy(player.sprite),
+                        color = COLOR.PURPLE,
+                        sprite = {
+                            animation = 1,
+                            animations = {
+                                anim8.newAnimation(ASSETS.fishGrid('1-11', 12), 0.1),
+                                anim8.newAnimation(ASSETS.fishGrid(1, 2), 0.2),
+                            },
+                            spritesheet = ASSETS.fishSpritesheet
+                        },
                         cutscenePlayer = {
                             stopTimer = Timer:new(6.0),
                         },
@@ -600,11 +610,18 @@ function Game:update()
             if ok then
                 local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
                 if Physics.check_collision_rect_rect(playerRect, e.rect) then
+                    if not ASSETS.music.ending:isPlaying() then
+                        ASSETS.music.ending:play()
+                        ASSETS.music.gris:stop()
+                    end
+
+                    player.player.stopMoving = true
+
                     self.entityPool:delete(ref)
                     for i = 1, 10 do
                         local microFish = {}
                         microFish.position = {
-                            x = player.position.x + math.random(16, 64),
+                            x = player.position.x - 120 - math.random(16, 64),
                             y = player.position.y + math.random(-24, 24),
                         }
                         microFish.color = COLOR.RED
@@ -676,6 +693,12 @@ function Game:update()
         end
 
         if e.player then
+            if e.position.x > 1984 and not ASSETS.music.ending:isPlaying() then
+                if not ASSETS.music.gris:isPlaying() then
+                    ASSETS.music.gris:play()
+                    ASSETS.music.bg:stop()
+                end
+            end
             if Map.isWater(tileX, tileY, centerY) then
                 self.musicTimer = math.min(2.0, self.musicTimer + deltaTime)
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
@@ -683,7 +706,7 @@ function Game:update()
                 self.musicTimer = math.max(0.0, self.musicTimer - deltaTime)
                 e.player.oxygen = Time.tick(e.player.oxygen)
             end
-            self.music:setVolume(self.musicVolume * self.musicTimer / 2.0)
+            self.music:setVolume(math.min(1, 0.2 + self.musicTimer / 2.0))
 
             if self.debug.godmode then
                 e.player.oxygen = PLAYER.OXYGEN
@@ -804,7 +827,7 @@ function Game:update()
                     ASSETS.sounds.toiletWater:play()
                 end
                 if Map.isWater(tileX, tileY, e.position.y) then
-                    ASSETS.sounds.toiletWater:setVolume(0.01)
+                    ASSETS.sounds.toiletWater:setVolume(0.05)
                 else
                     ASSETS.sounds.toiletWater:setVolume(0.0)
                 end
@@ -909,29 +932,32 @@ function Game:update()
 
             if Input.isJustPressed(KEYBINDS.COUNT_DEATH) then
                 e.player.count_deaths = e.player.count_deaths + 1
-                -- print(e.player.count_deaths)
             end
 
             if e.player.stunnedTimer:elapsed() then
                 if self.debug.godmode or Map.isWater(tileX, tileY, centerY) then
-                    if Input.isDown(KEYBINDS.ACTION_UP) then
-                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
-                    end
-                    if Input.isDown(KEYBINDS.ACTION_DOWN) then
-                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y - PLAYER.WATER_ACCELERATION
-                    end
+                    if e.player.stopMoving then
+                        e.rigidbody.velocity.x = 5
+                    else
+                        if Input.isDown(KEYBINDS.ACTION_UP) then
+                            e.rigidbody.acceleration.y = e.rigidbody.acceleration.y + PLAYER.WATER_ACCELERATION
+                        end
+                        if Input.isDown(KEYBINDS.ACTION_DOWN) then
+                            e.rigidbody.acceleration.y = e.rigidbody.acceleration.y - PLAYER.WATER_ACCELERATION
+                        end
 
-                    if Input.isDown(KEYBINDS.ACTION_LEFT) then
-                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.WATER_ACCELERATION
-                    end
-                    if Input.isDown(KEYBINDS.ACTION_RIGHT) then
-                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.WATER_ACCELERATION
-                    end
+                        if Input.isDown(KEYBINDS.ACTION_LEFT) then
+                            e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.WATER_ACCELERATION
+                        end
+                        if Input.isDown(KEYBINDS.ACTION_RIGHT) then
+                            e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.WATER_ACCELERATION
+                        end
 
-                    if e.rigidbody.acceleration.x ~= 0 and e.rigidbody.acceleration.y ~= 0 then
-                        assert(math.abs(e.rigidbody.acceleration.x) == math.abs(e.rigidbody.acceleration.y))
-                        e.rigidbody.acceleration.x = e.rigidbody.acceleration.x / math.sqrt(2)
-                        e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
+                        if e.rigidbody.acceleration.x ~= 0 and e.rigidbody.acceleration.y ~= 0 then
+                            assert(math.abs(e.rigidbody.acceleration.x) == math.abs(e.rigidbody.acceleration.y))
+                            e.rigidbody.acceleration.x = e.rigidbody.acceleration.x / math.sqrt(2)
+                            e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
+                        end
                     end
                 else
                     global_player_max_x_achieved = math.max(global_player_max_x_achieved, e.position.x)
@@ -1063,6 +1089,9 @@ function Game:update()
             elseif Map.isWater(tileX, tileY, centerY) then
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
+                    if e.player and math.abs(e.rigidbody.velocity.x) > 30 then
+                        ASSETS.sounds.wallHit:play()
+                    end
                     if math.abs(e.rigidbody.velocity.x) < 75 then
                         e.rigidbody.velocity.x = -1 * e.rigidbody.velocity.x
                     else
@@ -1072,6 +1101,9 @@ function Game:update()
 
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
                 if collisionY ~= nil then
+                    if e.player and math.abs(e.rigidbody.velocity.y) > 30 then
+                        ASSETS.sounds.wallHit:play()
+                    end
                     e.rigidbody.velocity.y = -1 * PLAYER.WATER_BOUNCE * e.rigidbody.velocity.y
                 end
 
@@ -1100,6 +1132,9 @@ function Game:update()
 
                 local collisionX = Physics.move_x(e.position, e.hitbox, e.rigidbody.velocity.x * deltaTime)
                 if collisionX ~= nil then
+                    if e.player and math.abs(e.rigidbody.velocity.x) > 30 then
+                        ASSETS.sounds.wallHit:play()
+                    end
                     if math.abs(e.rigidbody.velocity.x) < 75 then
                         local v = e.rigidbody.velocity.x
                         local V = PLAYER.MIN_V_FOR_BOUNCE
@@ -1117,6 +1152,7 @@ function Game:update()
                 local collisionY = Physics.move_y(e.position, e.hitbox, e.rigidbody.velocity.y * deltaTime)
                 if collisionY ~= nil then
                     if e.rigidbody.groundBounce then
+                        ASSETS.sounds.wallHit:play()
                         e.rigidbody.velocity.x = 30
                         e.rigidbody.velocity.y = 80
                     else
@@ -1169,6 +1205,7 @@ function Game:update()
                 local playerRect = Hitbox.to_rect(player.hitbox, player.position.x, player.position.y)
                 local ourRect = Hitbox.to_rect(e.hitbox, e.position.x, e.position.y)
                 if not self.debug.godmode and player.player.stunnedTimer:elapsed() and Physics.check_collision_rect_rect(playerRect, ourRect) then
+                    ASSETS.sounds.medusaHit:play()
                     player.player.stunnedTimer:restart()
                     player.shake.timer:restart()
                     local direction = normalize(player.position.x - e.position.x, e.position.y - player.position.y)
@@ -1318,34 +1355,37 @@ function Game:update()
             tile = Map.get(tileX, tileY)
         end
 
-        if e.cutscenePlayer and Map.isWater(tileX, tileY, e.position.y) then
+        if e.cutscenePlayer then
+            if Map.isWater(tileX, tileY, e.position.y) then
+                e.sprite.animation = 2
+                e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
+                if math.abs(e.rigidbody.velocity.x) < 10 then
+                    e.rigidbody.velocity.x = 0
+                end
 
-            e.sprite.animation = 'right'
-            e.rigidbody.velocity.x = e.rigidbody.velocity.x * math.pow(WORLD.WATER_FRICTION, deltaTime)
-            if math.abs(e.rigidbody.velocity.x) < 10 then
+                e.rigidbody.velocity.y = e.rigidbody.velocity.y * math.pow(WORLD.WATER_FRICTION, deltaTime)
+                if math.abs(e.rigidbody.velocity.y) < 10 then
+                    e.rigidbody.velocity.y = 0
+                end
+
                 e.rigidbody.velocity.x = 0
-            end
+                e.rigidbody.velocity.y = -30 * (1 - e.cutscenePlayer.stopTimer:progress())
 
-            e.rigidbody.velocity.y = e.rigidbody.velocity.y * math.pow(WORLD.WATER_FRICTION, deltaTime)
-            if math.abs(e.rigidbody.velocity.y) < 10 then
-                e.rigidbody.velocity.y = 0
-            end
-
-            e.rigidbody.velocity.y = -30 * (1 - e.cutscenePlayer.stopTimer:progress())
-
-            e.cutscenePlayer.stopTimer:tick()
-            if e.cutscenePlayer.stopTimer:elapsed() then
-                self.entityPool:delete(ref)
-                local player = self:createDefaultPlayer()
-                self.handles.cutscenePlayer = {}
-                self.handles.player = self.entityPool:put(player)
-                player.position.x = e.position.x
-                player.position.y = e.position.y
+                e.cutscenePlayer.stopTimer:tick()
+                if e.cutscenePlayer.stopTimer:elapsed() then
+                    self.entityPool:delete(ref)
+                    local player = self:createDefaultPlayer()
+                    self.handles.cutscenePlayer = {}
+                    self.handles.player = self.entityPool:put(player)
+                    player.position.x = e.position.x
+                    player.position.y = e.position.y
+                end
+            else
+                e.rigidbody.velocity.x = 17
             end
         end
 
         if (not self.debug.godmode and e.player) or e.jelly then
-
             update_hitbox_by_frame(e)
 
             iteration = 0
@@ -1386,7 +1426,11 @@ function Game:update()
             Camera:update(deadBody.position, deltaTime)
         end
     else
-        Camera:update(player.position, deltaTime)
+        if player.player.stopMoving then
+           -- Camera:update(Game.lastWaterPosition, deltaTime)
+        else
+            Camera:update(player.position, deltaTime)
+        end
     end
 end
 

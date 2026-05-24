@@ -358,14 +358,26 @@ GRAVITY = 200
 ASSETS = {}
 
 function ASSETS:loadAll()
-    self.music = love.audio.newSource('content/music.mp3', 'static')
+    self.music = {}
+    self.music.bg = love.audio.newSource('content/music/Water.mp3', 'static')
+    self.music.bg:setLooping(true)
+    self.music.heartbeat = love.audio.newSource('content/music/heartbeat.mp3', 'static')
+    self.music.heartbeat:setLooping(true)
+    self.music.gris = love.audio.newSource('content/music/Gris.mp3', 'static')
+    self.music.gris:setLooping(true)
+    self.music.ending = love.audio.newSource('content/music/Ending.mp3', 'static')
+    self.music.ending:setLooping(true)
+
 
     self.sounds = {}
     self.sounds.toiletWater = love.audio.newSource('content/sfx/toilet-water.mp3', 'static')
     self.sounds.toiletWater:setLooping(true)
 
-    self.sounds.water = love.audio.newSource('content/sfx/water.mp3', 'static')
-    self.sounds.impact = love.audio.newSource('content/sfx/wet-impact.mp3', 'static')
+    self.sounds.wallHit = love.audio.newSource('content/sfx/wallHit.wav', 'static')
+    self.sounds.medusaHit = love.audio.newSource('content/sfx/medusaHit.wav', 'static')
+    self.sounds.death = love.audio.newSource('content/sfx/death.wav', 'static')
+    self.sounds.water = love.audio.newSource('content/sfx/landToWater.wav', 'static')
+    self.sounds.impact = love.audio.newSource('content/sfx/waterToLand.wav', 'static')
 
     self.sounds.wetPunch = {}
     for i = 1, 7 do
