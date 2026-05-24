@@ -332,7 +332,7 @@ function Game:restart()
     }
 
     local cut = {
-        position = { x = 0, y = 0 },
+        position = { x = -200, y = -200 },
         cut = {},
         color = table.deepcopy(COLOR.WHITE),
         sprite = {
