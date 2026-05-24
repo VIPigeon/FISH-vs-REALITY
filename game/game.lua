@@ -1438,6 +1438,18 @@ function Game:draw()
 
         local x, y = e.position.x, e.position.y
 
+        -- тень рыбы
+        if e.fish then
+            local animation = e.sprite.animations[e.sprite.animation]
+            love.graphics.setColor(COLOR.WINE)
+            if e.shake then
+                animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y + 1)
+            else
+                animation:draw(e.sprite.spritesheet, x, y + 1)
+            end                        
+        end
+        --
+
         if e.color then
             love.graphics.setColor(e.color)
         end
