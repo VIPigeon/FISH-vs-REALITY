@@ -432,9 +432,9 @@ function Game:restart()
                     table.insert(used, ty*Map.terrain.width + x)
 
                     local water = {
-                        position = { x = 8*x, y = 8*y },
+                        position = { x = 8*x - 1, y = 8*y },
                         water = {
-                            width = 8,
+                            width = 8 + 2,
                             height = 8*(ty - y),
                         },
                     }
