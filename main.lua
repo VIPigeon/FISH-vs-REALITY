@@ -47,10 +47,13 @@ function love.draw()
 
     -- Дебажная информация.
     -- Хорошо что мы не ограничены маленьким экраном Тика для этих целей!
-    love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 0, 0)
-    love.graphics.print("'g' - godmode 'h' - hitboxes", 0, 22)
+    --love.graphics.print("FPS: " .. tostring(love.timer.getFPS()), 0, 0)
+    love.graphics.print("Press 'm' to mute/unmute", 0, 0)
     if Game.debug.godmode then
         love.graphics.print("GODMODE enabled", 0, 44)
+    end
+    if Game.muted then
+        love.graphics.print("GAME MUTED", 0, 22)
     end
     if Game.debug.showHitbox then
         Game.entityPool:foreach(function(e, ref)
@@ -94,15 +97,20 @@ function love.keypressed(key, scancode, isrepeat)
        love.event.quit()
    end
 
-   if key == 'r' then
-       Game:restart()
+   if key == 'm' then
+       Game.muted = not Game.muted
+       love.audio.setVolume(Game.muted and 0 or 0.5)
    end
 
-   if key == 'g' then
-       Game.debug.godmode = not Game.debug.godmode
-   end
+   -- if key == 'r' then
+   --     Game:restart()
+   -- end
 
-   if key == 'h' then
-       Game.debug.showHitbox = not Game.debug.showHitbox
-   end
+   -- if key == 'g' then
+   --     Game.debug.godmode = not Game.debug.godmode
+   -- end
+
+   -- if key == 'h' then
+   --     Game.debug.showHitbox = not Game.debug.showHitbox
+   -- end
 end
