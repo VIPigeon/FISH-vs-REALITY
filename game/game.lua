@@ -575,6 +575,7 @@ function Game:killPlayer()
     }
     local motivation_text = {
         position = {x = 0, y = 45},
+        ui = {},
         sprite = {
             animation = ASSETS.motivation_i,
             animations = ASSETS.motivation,
