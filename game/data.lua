@@ -420,6 +420,7 @@ function ASSETS:loadAll()
     self.tilesheet = love.graphics.newImage('content/tilemap/tilesheet.png')
     self.whitePixel = love.graphics.newImage('content/whitePixel.png')
     self.ripple = love.graphics.newImage('content/ripple.png')
+    self.motivationSpriteSheet = love.graphics.newImage('content/motivation.png')
 
     self.boardGrid = anim8.newGrid(self.board:getPixelWidth(), self.board:getPixelHeight(), self.board:getPixelWidth(), self.board:getPixelHeight())
     self.numbersGrid = anim8.newGrid(5, 6, self.numbers:getPixelWidth(), self.numbers:getPixelHeight())
@@ -460,6 +461,21 @@ function ASSETS:loadAll()
     self.waterShader = love.graphics.newShader(SHADERS_SOURCES.water)
     self.waterSurfaceShader = love.graphics.newShader(SHADERS_SOURCES.waterSurface)
     self.gradientShader = love.graphics.newShader(SHADERS_SOURCES.gradient)
+
+    self.motivationGrid = anim8.newGrid(240, 32, self.motivationSpriteSheet:getPixelWidth(), self.motivationSpriteSheet:getPixelHeight())
+    self.motivation = {
+        anim8.newAnimation(self.motivationGrid(1, 1), 1),
+        anim8.newAnimation(self.motivationGrid(1, 2), 1),
+        anim8.newAnimation(self.motivationGrid(1, 3), 1),
+        anim8.newAnimation(self.motivationGrid(1, 4), 1),
+        anim8.newAnimation(self.motivationGrid(1, 5), 1),
+        anim8.newAnimation(self.motivationGrid(1, 6), 1),
+        anim8.newAnimation(self.motivationGrid(1, 7), 1),
+        anim8.newAnimation(self.motivationGrid(1, 8), 1),
+        anim8.newAnimation(self.motivationGrid(1, 9), 1),
+        anim8.newAnimation(self.motivationGrid(1, 10), 1),
+    }
+    self.motivation_i = 1
 end
 
 SHADERS_SOURCES = {

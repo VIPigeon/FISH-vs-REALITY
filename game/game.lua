@@ -584,6 +584,16 @@ function Game:killPlayer()
             shadow = {color=COLOR.WINE},
         },
     }
+    local motivation_text = {
+        position = {x = 0, y = 45},
+        sprite = {
+            animation = ASSETS.motivation_i,
+            animations = ASSETS.motivation,
+            spritesheet = ASSETS.motivationSpriteSheet,
+        }
+    }
+    self.entityPool:put(motivation_text)
+    ASSETS.motivation_i = ASSETS.motivation_i % (#ASSETS.motivation) + 1
 
     if string.find(player.sprite.animation, "right") then
         playerDeadBody.sprite.animation = 2
@@ -1060,7 +1070,6 @@ function Game:update()
                             else
                                 P = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
                             end
-                            print(e.player.max_x_achieved, P)
                             local ball = math.random()
                             local jump_type = 'short'
                             if ball < P then
@@ -1640,6 +1649,9 @@ function Game:draw()
             if e.shake then
                 animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
             else
+                if e.sprite.spritesheet == ASSETS.motivation then
+                    print(e.animation_i)
+                end
                 animation:draw(e.sprite.spritesheet, x, y)
             end
         end
