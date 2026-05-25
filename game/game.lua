@@ -1070,10 +1070,14 @@ function Game:update()
                             -- прыжок
                             -- Y
                             local P
+                            local O2 = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
                             if e.position.x > e.player.max_x_achieved then
-                                P = 0.3 * (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
+                                P = 0.3 * O2
+                                if O2 > 0.9 then
+                                    P = 0.9
+                                end
                             else
-                                P = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
+                                P = O2
                             end
                             local ball = math.random()
                             local jump_type = 'short'
