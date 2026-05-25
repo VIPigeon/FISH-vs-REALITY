@@ -276,24 +276,22 @@ function Game:restart()
 
     local endgameRect = {
         ACTUAL_CUTSCENE_RECT = {},
-        position = { x = 320*8, y = 65*8 },
-        -- rect = Rect:new(320*8, 65*8, 100*8, 100*8),
-        rect = Rect:new(-320*8, -65*8, 1, 1),
+        position = { x = 3740, y = 200 },
+        rect = Rect:new(3740, 200, 100*8, 100*8),
     }
 
     -- Для включения падения с лестницы
     local endCutsceneRect = {
         endgameRect = {},
-        position = { x = 261*8, y = 35*8 },
-        -- rect = Rect:new(261*8, 35*8, 7*8, 16),
-        rect = Rect:new(-261*8, -35*8, 1, 1),
+        position = { x = 2897, y = 304 },
+        rect = Rect:new(2897, 304, 7*8, 16),
     }
 
     self.entityPool:put(endCutsceneRect)
     self.entityPool:put(endgameRect)
 
     local mollusk = {
-        position = { x = 456, y = 176 },
+        position = { x = 1960, y = 456 },
         sprite = {
             animation = 1,
             animations = {
@@ -467,13 +465,13 @@ function Game:restart()
             layer = 0,
         },
     }
+    --self.entityPool:put(pipeBubbles)
+    --self.entityPool:put(pipeBubbles2)
+    --self.entityPool:put(pipeBubbles3)
 
     self.entityPool:put(jelly)
     self.entityPool:put(jelly2)
     self.entityPool:put(bubbles)
-    self.entityPool:put(pipeBubbles)
-    self.entityPool:put(pipeBubbles2)
-    self.entityPool:put(pipeBubbles3)
     self.entityPool:put(bigBubbles)
 
     self.handles.player = self.entityPool:put(player)
@@ -686,6 +684,58 @@ function Game:update()
             end
         end
 
+        if e.fishSpawner then
+            local player, ok = self.entityPool:get(self.handles.player)
+            e.fishSpawner:tick()
+            if e.fishSpawner:elapsed() then
+                e.fishSpawner:restart()
+                local microFish = {}
+                microFish.position = {
+                    x = 3587 - math.random(0, 64),
+                    y = player.position.y + math.random(-24, 24),
+                }
+                microFish.shadow = {
+                    color = COLOR.WINE,
+                }
+                microFish.death = Timer:new(60.0)
+                microFish.color = COLOR.RED
+                microFish.color.a = 0.7
+                microFish.cutsceneFish = {
+                    angle = 0,
+                    startX = microFish.position.x,
+                    startY = microFish.position.y,
+                }
+                microFish.rigidbody = {
+                    velocity = { x = 0, y = 0 },
+                    acceleration = { x = 0, y = 0 },
+                }
+                microFish.hitbox = {
+                    offset_x = 0,
+                    offset_y = 0,
+                    width = 1,
+                    height = 1,
+                }
+                microFish.sprite = {
+                    animation = 1,
+                    animations = {
+                        anim8.newAnimation(ASSETS.microFishGrid(1, 1), 0.1 + 2*math.random(), function()
+                            microFish.sprite.animation = 2
+                        end), 
+                        anim8.newAnimation(ASSETS.microFishGrid('1-11', 1), 0.35, function()
+                            microFish.sprite.animation = 3
+                            microFish.sprite.spritesheet = ASSETS.fishSpritesheet
+                        end), 
+                        anim8.newAnimation(ASSETS.fishGrid('1-7', 1), 0.2, function()
+                            microFish.sprite.animation = 4
+                        end), 
+                        anim8.newAnimation(ASSETS.fishGrid('13-14', 6), 0.2),
+                    },
+                    spritesheet = ASSETS.microFish,
+                }
+                self.entityPool:put(microFish)
+            end
+        end
+
         if e.ACTUAL_CUTSCENE_RECT then
             local player, ok = self.entityPool:get(self.handles.player)
             if ok then
@@ -701,12 +751,23 @@ function Game:update()
                     player.player.stopMoving = true
 
                     self.entityPool:delete(ref)
+                    local fishSpawner = {
+                        position = {x = -100, y = -100},
+                        fishSpawner = Timer:new(1.0),
+                    }
+
+                    lume.trace(player.position.x - 140)
+                    self.entityPool:put(fishSpawner)
                     for i = 1, 10 do
                         local microFish = {}
                         microFish.position = {
-                            x = player.position.x - 120 - math.random(16, 64),
-                            y = player.position.y + math.random(-24, 24),
+                            x = 3587 - math.random(0, 64),
+                            y = player.position.y + math.random(-24, 32),
                         }
+                        microFish.shadow = {
+                            color = COLOR.WINE,
+                        }
+                        microFish.death = Timer:new(60.0)
                         microFish.color = COLOR.RED
                         microFish.color.a = 0.5
                         microFish.cutsceneFish = {
@@ -776,14 +837,19 @@ function Game:update()
         end
 
         if e.player then
-            if e.position.x > 1984 and not ASSETS.music.ending:isPlaying() then
-                if not Map.isWater(tileX, tileY, e.position.y) and not ASSETS.music.gris:isPlaying() then
+            if e.position.x > 2540 then
+                if not ASSETS.music.gris:isPlaying() then
                     ASSETS.music.gris:play()
-                    ASSETS.music.bg:stop()
-                else
-                    ASSETS.music.gris:stop()
                 end
             end
+            if ASSETS.music.ending:isPlaying() or Map.isWater(tileX, tileY, e.position.y) then
+                ASSETS.music.gris:stop()
+            end
+
+            if ASSETS.music.ending:isPlaying() or ASSETS.music.gris:isPlaying() then
+                ASSETS.music.bg:stop()
+            end
+
             if Map.isWater(tileX, tileY, centerY) then
                 self.musicTimer = math.min(2.0, self.musicTimer + deltaTime)
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
@@ -1469,7 +1535,7 @@ function Game:update()
                     player.position.y = e.position.y
                 end
             else
-                e.rigidbody.velocity.x = 17
+                e.rigidbody.velocity.x = 30
             end
         end
 
@@ -1556,6 +1622,9 @@ function Game:draw()
     love.graphics.setShader()
 
     self.entityPool:foreach(function(e, ref)
+        if not e.position then
+            return
+        end
         local x, y = e.position.x, e.position.y
         if e.water and not e.water.surface then
             ASSETS.waterShader:send('y', e.position.y)
