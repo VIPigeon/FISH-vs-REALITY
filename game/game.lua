@@ -1071,13 +1071,14 @@ function Game:update()
                             local P
                             local O2 = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
                             if e.position.x > e.player.max_x_achieved then
-                                P = 0.3 * O2
+                                P = 0.11 * O2
                                 if O2 > 0.9 then
                                     P = 0.9
                                 end
                             else
                                 P = O2
                             end
+                            print(P)
                             local ball = math.random()
                             local jump_type = 'short'
                             if ball < P then
@@ -1132,6 +1133,8 @@ function Game:update()
                 elseif Input.isJustPressed(KEYBINDS.ACTION_RIGHT) then
                     actionPressed = true
                 end
+
+                e.player.max_x_achieved = math.max(e.player.max_x_achieved, global_player_max_x_achieved)
 
                 if actionPressed then
                     local ripple = {
