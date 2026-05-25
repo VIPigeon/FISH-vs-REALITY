@@ -276,15 +276,15 @@ function Game:restart()
 
     local endgameRect = {
         ACTUAL_CUTSCENE_RECT = {},
-        position = { x = 3740, y = 200 },
-        rect = Rect:new(3740, 200, 100*8, 100*8),
+        position = { x = 600*8, y = 100 },
+        rect = Rect:new(600*8, 100, 100*8, 100*12),
     }
 
     -- Для включения падения с лестницы
     local endCutsceneRect = {
         endgameRect = {},
-        position = { x = 2897, y = 304 },
-        rect = Rect:new(2897, 304, 7*8, 16),
+        position = { x = 2940, y = 310 },
+        rect = Rect:new(2940, 310, 7*8, 100),
     }
 
     self.entityPool:put(endCutsceneRect)
@@ -673,7 +673,7 @@ function Game:update()
                             spritesheet = ASSETS.fishSpritesheet
                         },
                         cutscenePlayer = {
-                            stopTimer = Timer:new(6.0),
+                            stopTimer = Timer:new(5.0),
                         },
                     }
                     cutscenePlayer.rigidbody.groundBounce = 1
@@ -691,11 +691,8 @@ function Game:update()
                 e.fishSpawner:restart()
                 local microFish = {}
                 microFish.position = {
-                    x = 3587 - math.random(0, 64),
+                    x = 4640 - math.random(0, 64),
                     y = player.position.y + math.random(-24, 24),
-                }
-                microFish.shadow = {
-                    color = COLOR.WINE,
                 }
                 microFish.death = Timer:new(60.0)
                 microFish.color = COLOR.RED
@@ -716,6 +713,9 @@ function Game:update()
                     height = 1,
                 }
                 microFish.sprite = {
+                    shadow = {
+                        color = COLOR.WINE,
+                    },
                     animation = 1,
                     animations = {
                         anim8.newAnimation(ASSETS.microFishGrid(1, 1), 0.1 + 2*math.random(), function()
@@ -761,13 +761,9 @@ function Game:update()
                     for i = 1, 10 do
                         local microFish = {}
                         microFish.position = {
-                            x = 3587 - math.random(0, 64),
+                            x = 4640 - math.random(0, 64),
                             y = player.position.y + math.random(-24, 32),
                         }
-                        microFish.shadow = {
-                            color = COLOR.WINE,
-                        }
-                        microFish.death = Timer:new(60.0)
                         microFish.color = COLOR.RED
                         microFish.color.a = 0.5
                         microFish.cutsceneFish = {
@@ -786,6 +782,10 @@ function Game:update()
                             height = 1,
                         }
                         microFish.sprite = {
+                            shadow = {
+                                color = COLOR.WINE,
+                            },
+
                             animation = 1,
                             animations = {
                                 anim8.newAnimation(ASSETS.microFishGrid(1, 1), 0.1 + 2*math.random(), function()
@@ -1535,7 +1535,7 @@ function Game:update()
                     player.position.y = e.position.y
                 end
             else
-                e.rigidbody.velocity.x = 30
+                e.rigidbody.velocity.x = 60
             end
         end
 
