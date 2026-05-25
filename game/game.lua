@@ -419,6 +419,9 @@ function Game:restart()
             },
         },
     }
+
+    ASSETS.music.heartbeat:play()
+    ASSETS.music.heartbeat:setVolume(0)
     self.entityPool:put(cut)
 
     self.entityPool:put(mollusk)
@@ -795,8 +798,10 @@ function Game:update()
             if Map.isWater(tileX, tileY, centerY) then
                 self.musicTimer = math.min(2.0, self.musicTimer + deltaTime)
                 e.player.oxygen = math.min(PLAYER.OXYGEN, e.player.oxygen + deltaTime*PLAYER.OXYGEN_INCOME)
+                ASSETS.music.heartbeat:setVolume(1.0 - self.musicTimer / 2.0)
             else
                 self.musicTimer = math.max(0.0, self.musicTimer - deltaTime)
+                ASSETS.music.heartbeat:setVolume(1.0 - self.musicTimer / 2.0)
                 e.player.oxygen = Time.tick(e.player.oxygen)
             end
             self.music:setVolume(math.min(1, 0.2 + self.musicTimer / 2.0))
@@ -1617,11 +1622,6 @@ function Game:draw()
 
         local x, y = e.position.x, e.position.y
 
-        if e.ui then
-            x = x + Camera.x
-            y = y + Camera.y
-        end
-
         -- тень
         if e.sprite and e.sprite.shadow then
             local animation = e.sprite.animations[e.sprite.animation]
@@ -1642,7 +1642,7 @@ function Game:draw()
             love.graphics.rectangle('fill', x, y, e.rectangle.width, e.rectangle.height)
         end
 
-        if e.sprite and not e.water then
+        if not e.ui and e.sprite and not e.water then
             local animation = e.sprite.animations[e.sprite.animation]
             local w, h = animation:getDimensions()
 
@@ -1662,6 +1662,28 @@ function Game:draw()
         end
 
         love.graphics.setColor(COLOR.WHITE)
+    end)
+
+    self.entityPool:foreach(function(e, ref)
+        if not e.ui then
+            return
+        end
+
+        local x, y = e.position.x, e.position.y
+
+        x = x + Camera.x
+        y = y + Camera.y
+
+        if e.sprite and not e.water then
+            local animation = e.sprite.animations[e.sprite.animation]
+            local w, h = animation:getDimensions()
+
+            if e.shake then
+                animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
+            else
+                animation:draw(e.sprite.spritesheet, x, y)
+            end
+        end
     end)
 
     Camera:endDraw()
