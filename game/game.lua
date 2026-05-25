@@ -573,7 +573,7 @@ function Game:killPlayer()
         playerDeadBody = {
             respawnTimer = Timer:new(3.0),
         },
-        color = COLOR.GREY,
+        color = COLOR.GREEN,
         sprite = {
             animation = 1,
             animations = {
@@ -581,6 +581,7 @@ function Game:killPlayer()
                 anim8.newAnimation(ASSETS.fishGrid('1-5', 11), 0.2),
             },
             spritesheet = ASSETS.fishSpritesheet,
+            shadow = {color=COLOR.WINE},
         },
     }
 
@@ -969,9 +970,10 @@ function Game:update()
             if not e.player.stunnedTimer:elapsed() then
                 e.color = COLOR.BRIGHTEST
             elseif e.player.oxygen < PLAYER.OXYGEN / 4 then
-                e.color = COLOR.GREY
+                e.color = COLOR.GREEN
             elseif e.player.oxygen < PLAYER.OXYGEN / 2 then
-                e.color = COLOR.PURPLE
+            -- elseif e.player.oxygen < PLAYER.OXYGEN / 3 then
+                e.color = COLOR.LIGHT_GREEN
             else
                 e.color = COLOR.RED
             end

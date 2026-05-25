@@ -53,6 +53,10 @@ COLOR = {
     WINE = lume.color('#6c5671'),
     PURPLE = lume.color('#b0a9e4'),
     GREY = lume.color('#d9c8bf'),
+    ORANGE = lume.color('#ffc384'),
+    BROWN = lume.color('#dea38b'),
+    LIGHT_GREEN = lume.color('#b0eb93'),
+    GREEN = lume.color('#87a889'),
     --
 }
 COLOR.BACKGROUND = COLOR.WINE
@@ -102,7 +106,7 @@ PLAYER = {
     SPAWN_X = 14*8,
     SPAWN_Y = 9*8,
 
-    MIN_V_FOR_BOUNCE = 28,
+    MIN_V_FOR_BOUNCE = 23,
     JUMP = {
         -- MIN_T = 0.1,
         -- MAX_T = 1.1,
@@ -333,9 +337,22 @@ WORLD = {
             88, 89, 90, 91,
             214, 215,
 
+            -- castle
             16*16, 16*16 + 1, 16*16 + 2, 16*16 + 3,
             16*17, 16*17 + 1, 16*17 + 2, 16*17 + 3,
             16*18, 16*18 + 1, 16*18 + 2,
+
+            --github
+            16*20, 16*20 + 1, 16*20 + 2, 16*20 + 3, 16*20 + 4, 16*20 + 5,
+            16*21, 16*21 + 1, 16*21 + 2, 16*21 + 3, 16*21 + 4, 16*21 + 5,
+
+            -- books
+            16*23, 16*23 + 1, 16*23 + 2, 16*23 + 3, 16*23 + 4, 16*23 + 5,
+            16*24 + 6, 16*24 + 7, 16*24 + 8,
+
+            -- table with carpet
+            16*24, 16*24 + 1, 16*24 + 2,
+            16*25 + 1,
         },
         WATER = { 32, 33, 34, 49,
             24, 25, 26, 27,
