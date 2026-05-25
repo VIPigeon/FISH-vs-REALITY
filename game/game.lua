@@ -608,7 +608,7 @@ function reloadAnimation(e)
     e.sprite.animations[e.sprite.animation]:resume()
 end
 
-
+endgame_flag = false
 function Game:update()
     local deltaTime = love.timer.getDelta()
 
@@ -663,14 +663,15 @@ function Game:update()
                         position = { x = player.position.x, y = player.position.y },
                         hitbox = table.deepcopy(player.hitbox),
                         rigidbody = table.deepcopy(player.rigidbody),
-                        color = COLOR.PURPLE,
+                        color = COLOR.RED,
                         sprite = {
                             animation = 1,
                             animations = {
                                 anim8.newAnimation(ASSETS.fishGrid('1-11', 12), 0.1),
                                 anim8.newAnimation(ASSETS.fishGrid(1, 2), 0.2),
                             },
-                            spritesheet = ASSETS.fishSpritesheet
+                            spritesheet = ASSETS.fishSpritesheet,
+                            shadow = {color=COLOR.WINE},
                         },
                         cutscenePlayer = {
                             stopTimer = Timer:new(5.0),
@@ -838,11 +839,14 @@ function Game:update()
 
         if e.player then
             if e.position.x > 2540 then
-                if not ASSETS.music.gris:isPlaying() then
+                if not endgame_flag and not ASSETS.music.gris:isPlaying() then
                     ASSETS.music.gris:play()
                 end
             end
             if ASSETS.music.ending:isPlaying() or Map.isWater(tileX, tileY, e.position.y) then
+                if ASSETS.music.gris:isPlaying() then
+                    endgame_flag = true
+                end
                 ASSETS.music.gris:stop()
             end
 
@@ -1535,7 +1539,8 @@ function Game:update()
                     player.position.y = e.position.y
                 end
             else
-                e.rigidbody.velocity.x = 60
+                -- e.rigidbody.velocity.x = 60
+                e.rigidbody.velocity.x = 120
             end
         end
 
