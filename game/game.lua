@@ -277,14 +277,16 @@ function Game:restart()
     local endgameRect = {
         ACTUAL_CUTSCENE_RECT = {},
         position = { x = 320*8, y = 65*8 },
-        rect = Rect:new(320*8, 65*8, 100*8, 100*8),
+        -- rect = Rect:new(320*8, 65*8, 100*8, 100*8),
+        rect = Rect:new(-320*8, -65*8, 1, 1),
     }
 
     -- Для включения падения с лестницы
     local endCutsceneRect = {
         endgameRect = {},
         position = { x = 261*8, y = 35*8 },
-        rect = Rect:new(261*8, 35*8, 7*8, 16),
+        -- rect = Rect:new(261*8, 35*8, 7*8, 16),
+        rect = Rect:new(-261*8, -35*8, 1, 1),
     }
 
     self.entityPool:put(endCutsceneRect)
@@ -571,19 +573,16 @@ function Game:killPlayer()
             shadow = {color=COLOR.WINE},
         },
     }
-
     local motivation_text = {
-        position = {x = 0, y = 48},
-        ui = {},
+        position = {x = 0, y = 45},
         sprite = {
             animation = ASSETS.motivation_i,
             animations = ASSETS.motivation,
             spritesheet = ASSETS.motivationSpriteSheet,
-        },
-        death = Timer:new(3.0),
+        }
     }
     self.entityPool:put(motivation_text)
-    ASSETS.motivation_i = moduloIncrement(ASSETS.motivation_i, #ASSETS.motivation)
+    ASSETS.motivation_i = ASSETS.motivation_i % (#ASSETS.motivation) + 1
 
     if string.find(player.sprite.animation, "right") then
         playerDeadBody.sprite.animation = 2
@@ -1016,6 +1015,10 @@ function Game:update()
             e.rigidbody.acceleration.y = 0
             e.shake.offset_x = 0
             e.shake.offset_y = 0
+
+            if Input.isJustPressed(KEYBINDS.COUNT_DEATH) then
+                e.player.count_deaths = e.player.count_deaths + 1
+            end
 
             if e.player.stunnedTimer:elapsed() then
                 if self.debug.godmode or Map.isWater(tileX, tileY, centerY) then
@@ -1482,41 +1485,18 @@ function Game:update()
                 local collision = Physics.check_collision_rect_tilemap(current_rect)
 
                 if collision ~= nil then
-                    local tileX = math.floor(collision.x / 8)
-                    local tileY = math.floor(collision.y / 8)
-                    local tileId = Map.get(tileX, tileY)
-                    if table.contains(WORLD.TILE.GLASS, tileId) then
-                        if tileId == 214 then
-                            local d1 = collision.x - e.position.x
-                            local d2 = e.position.x + e.hitbox.offset_x + e.hitbox.width - collision.x
-                            if d1 > d2 then
-                                e.position.x = e.position.x - 2
-                            else
-                                e.position.x = e.position.x + 2
-                            end
-                        elseif tileId == 215 then
-                            local d1 = 7+collision.x - e.position.x
-                            local d2 = e.position.x + e.hitbox.offset_x + e.hitbox.width - 7+collision.x
-                            if d1 < d2 then
-                                e.position.x = e.position.x - 2
-                            else
-                                e.position.x = e.position.x + 2
-                            end
-                        end
-                    else
-                        local left = e.position.x + e.hitbox.offset_x
-                        local right = left + e.hitbox.width
-                        local top = e.position.y + e.hitbox.offset_y
-                        local bottom = top + e.hitbox.height
-                        if right > collision.x and left < collision.x then
-                            e.position.x = collision.x - e.hitbox.width - e.hitbox.offset_x
-                        elseif right > collision.x + 8 and left < collision.x + 8 then
-                            e.position.x = collision.x + 8 - e.hitbox.offset_x
-                        elseif bottom > e.position.y and top < collision.y then
-                            e.position.y = collision.y - e.hitbox.height - e.hitbox.offset_y
-                        elseif bottom > collision.y + 8 and top < collision.y + 8 then
-                            e.position.y = collision.y + 8 - e.hitbox.offset_y
-                        end
+                    local left = e.position.x + e.hitbox.offset_x
+                    local right = left + e.hitbox.width
+                    local top = e.position.y + e.hitbox.offset_y
+                    local bottom = top + e.hitbox.height
+                    if right > collision.x and left < collision.x then
+                        e.position.x = collision.x - e.hitbox.width - e.hitbox.offset_x
+                    elseif right > collision.x + 8 and left < collision.x + 8 then
+                        e.position.x = collision.x + 8 - e.hitbox.offset_x
+                    elseif bottom > e.position.y and top < collision.y then
+                        e.position.y = collision.y - e.hitbox.height - e.hitbox.offset_y
+                    elseif bottom > collision.y + 8 and top < collision.y + 8 then
+                        e.position.y = collision.y + 8 - e.hitbox.offset_y
                     end
                 else
                     break
