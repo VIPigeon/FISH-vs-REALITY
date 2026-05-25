@@ -1042,6 +1042,7 @@ function Game:update()
                             e.rigidbody.acceleration.y = e.rigidbody.acceleration.y / math.sqrt(2)
                         end
                     end
+                    e.player.max_x_achieved = math.max(e.player.max_x_achieved, global_player_max_x_achieved)
                 else
                     global_player_max_x_achieved = math.max(global_player_max_x_achieved, e.position.x)
                     local onGround = Physics.is_on_ground(e.position, e.hitbox)
@@ -1117,8 +1118,6 @@ function Game:update()
                 elseif Input.isJustPressed(KEYBINDS.ACTION_RIGHT) then
                     actionPressed = true
                 end
-
-                e.player.max_x_achieved = math.max(e.player.max_x_achieved, global_player_max_x_achieved)
 
                 if actionPressed then
                     local ripple = {
@@ -1550,7 +1549,7 @@ function Game:draw()
     Camera:beginDraw()
 
     ASSETS.gradientShader:send('colorTop', COLOR.WINE)
-    ASSETS.gradientShader:send('colorBottom', COLOR.BRIGHTEST)
+    ASSETS.gradientShader:send('colorBottom', COLOR.PURPLE)
     love.graphics.setShader(ASSETS.gradientShader)
     love.graphics.draw(ASSETS.whitePixel, Camera.x, Camera.y, 0, 240, 136)
     love.graphics.setShader()
