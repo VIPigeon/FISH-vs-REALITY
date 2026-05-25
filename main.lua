@@ -1,7 +1,6 @@
 -- Рыба 🐟
 
 lume   = require('libs.lume')
-lurker = require('libs.lurker')
 anim8  = require('libs.anim8')
 
 require('base.common')

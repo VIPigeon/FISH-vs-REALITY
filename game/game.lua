@@ -132,26 +132,10 @@ function Game:createDefaultPlayer()
                 y = 0,
             },
         },
-        -- hitbox = {
-        --     offset_x = 2,
-        --     offset_y = 2,
-        --     width = 5,
-        --     height = 4,
-        -- },
     }
     player.player.stunnedTimer:stop()
 
-    -- for _, row in ipairs(FISH.BOX_BY_FRAME) do
-    --     for _, box in ipairs(row) do
-    --         print(box.x1, box.y1, box.y1, box.y2)
-    --     end
-    --     print()
-    -- end
     update_hitbox_by_frame(player)
-
-    -- local jump_type = player.player.jump.bucket[1]
-    -- player.player.jump.t = PLAYER.JUMP[jump_type].T
-    -- table.shuffle(player.player.jump.bucket)
 
     return player
 end
@@ -428,13 +412,13 @@ function Game:restart()
 
     local bubbleParticles = love.graphics.newParticleSystem(ASSETS.whiteSquare2x2)
     bubbleParticles:setParticleLifetime(5.0, 16.0)
-    bubbleParticles:setEmissionRate(10.0)
-    bubbleParticles:setEmissionArea('uniform', 400, 100)
+    bubbleParticles:setEmissionRate(50.0)
+    bubbleParticles:setEmissionArea('uniform', 264*8, 16*8)
     bubbleParticles:setTexture(ASSETS.bubble4x4)
     bubbleParticles:setLinearAcceleration(-2, -1, 2, -2.5)
     bubbleParticles:setColors(1, 1, 1, 0.5, 1, 1, 1, 0)
     local bubbles = {
-        position = { x = 500, y = 360 },
+        position = { x = 264*8, y = 70*8 },
         particles = {
             system = bubbleParticles,
             layer = -1,
@@ -443,7 +427,7 @@ function Game:restart()
 
     local bigBubbleSystem = bubbleParticles:clone()
     bigBubbleSystem:setTexture(ASSETS.bubble6x6)
-    bigBubbleSystem:setEmissionRate(3.0)
+    bigBubbleSystem:setEmissionRate(30.0)
     local bigBubbles = {
         position = {},
         particles = {
@@ -456,7 +440,7 @@ function Game:restart()
 
     local smallBubbles = bubbleParticles:clone()
     smallBubbles:setEmissionArea('uniform', 2, 2)
-    smallBubbles:setEmissionRate(5.0)
+    smallBubbles:setEmissionRate(3.0)
     smallBubbles:setParticleLifetime(2.0, 9.0)
     smallBubbles:setLinearAcceleration(-5, -2, 5, -12)
     smallBubbles:setTexture(ASSETS.bubble3x3)
@@ -708,7 +692,6 @@ function Game:update()
                 if Physics.check_collision_rect_rect(playerRect, e.rect) then
                     if not ASSETS.music.ending:isPlaying() then
                         ASSETS.music.ending:play()
-                        ASSETS.music.gris:stop()
                     end
 
                     local fishCounter = self.entityPool:get(self.handles.numberLeft)
@@ -793,9 +776,11 @@ function Game:update()
 
         if e.player then
             if e.position.x > 1984 and not ASSETS.music.ending:isPlaying() then
-                if not ASSETS.music.gris:isPlaying() then
+                if not Map.isWater(tileX, tileY, e.position.y) and not ASSETS.music.gris:isPlaying() then
                     ASSETS.music.gris:play()
                     ASSETS.music.bg:stop()
+                else
+                    ASSETS.music.gris:stop()
                 end
             end
             if Map.isWater(tileX, tileY, centerY) then
@@ -1078,7 +1063,6 @@ function Game:update()
                             else
                                 P = O2
                             end
-                            print(P)
                             local ball = math.random()
                             local jump_type = 'short'
                             if ball < P then
@@ -1678,9 +1662,6 @@ function Game:draw()
             if e.shake then
                 animation:draw(e.sprite.spritesheet, x + e.shake.offset_x, y + e.shake.offset_y)
             else
-                if e.sprite.spritesheet == ASSETS.motivation then
-                    print(e.animation_i)
-                end
                 animation:draw(e.sprite.spritesheet, x, y)
             end
         end
