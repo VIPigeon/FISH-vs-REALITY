@@ -105,11 +105,11 @@ function love.keypressed(key, scancode, isrepeat)
    --     Game:restart()
    -- end
 
-   if key == 'g' then
-       Game.debug.godmode = not Game.debug.godmode
-   end
+   -- if key == 'g' then
+   --     Game.debug.godmode = not Game.debug.godmode
+   -- end
 
-   if key == 'h' then
-       Game.debug.showHitbox = not Game.debug.showHitbox
-   end
+   -- if key == 'h' then
+   --     Game.debug.showHitbox = not Game.debug.showHitbox
+   -- end
 end
