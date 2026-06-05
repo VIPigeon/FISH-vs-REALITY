@@ -95,8 +95,8 @@ PLAYER = {
     WATER_ACCELERATION = 210,
     WATER_BOUNCE = 0.5,
     WALL_BOUNCE = 0.67, -- когда рыба на суше
-    GROUND_ACCELERATION = 36,
-    MAX_VELOCITY = 111,
+    GROUND_ACCELERATION = 37,
+    MAX_VELOCITY = 115,
     MAX_SUPER_VELOCITY = 140,
 
     -- SPAWN_X = 300*8,  -- конец
@@ -106,7 +106,7 @@ PLAYER = {
     SPAWN_X = 12*8,
     SPAWN_Y = 9*8,
 
-    MIN_V_FOR_BOUNCE = 23,
+    MIN_V_FOR_BOUNCE = 16,
     JUMP = {
         -- MIN_T = 0.1,
         -- MAX_T = 1.1,
@@ -115,7 +115,7 @@ PLAYER = {
         -- F — Force 😎
         short = {T=0, F=1550 * 1.8 * 0.016},
         -- middle = {T=0.15, F=2400 * 1.8 * 0.016},
-        high = {T=0.2, F=4977 * 1.2 * 0.016},
+        high = {T=0.1, F=4977 * 1.2 * 0.016},
 
         -- BUCKET = {
         --     'short',
@@ -136,10 +136,11 @@ PLAYER = {
         -- },
 
         X_DRIFT = {
-            ['small'] = 111*1.8*0.016,
+            ['small'] = 120*1.8*0.016,
             ['big'] = 222*1.8*0.016, -- в бане
         },
         X_BUCKET = {
+            'small-back',
             'small-back',
             'small-front',
             'none', -- перезагружаем по none

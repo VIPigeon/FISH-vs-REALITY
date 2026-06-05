@@ -975,6 +975,8 @@ function Game:update()
             if Map.isWater(tileX, tileY, e.position.y) then
                 e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity, e.player.maxVelocity)
                 e.rigidbody.velocity.y = lume.clamp(e.rigidbody.velocity.y, -e.player.maxVelocity, e.player.maxVelocity)
+            else
+                e.rigidbody.velocity.x = lume.clamp(e.rigidbody.velocity.x, -e.player.maxVelocity / 1.4, e.player.maxVelocity / 1.4)
             end
 
             local vl = vectorLength(e.rigidbody.velocity.x, e.rigidbody.velocity.y)
@@ -1127,8 +1129,9 @@ function Game:update()
                             -- Y
                             local P
                             local O2 = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
-                            if e.position.x > e.player.max_x_achieved then
-                                P = 0.11 * O2
+                            local GASLIGHT_ON = true  -- для дебага
+                            if GASLIGHT_ON and e.position.x > e.player.max_x_achieved then
+                                P = 0.52 * O2
                                 if O2 > 0.9 then
                                     P = 0.9
                                 end
@@ -1164,7 +1167,8 @@ function Game:update()
                                 e.rigidbody.velocity.x = e.rigidbody.velocity.x + Fx
                             end
                         end
-                    else -- горизонтальное перемещение только в воздухе
+                    -- else -- горизонтальное перемещение только в воздухе
+                    end
                         if Input.isDown(KEYBINDS.ACTION_LEFT) then
                             e.rigidbody.acceleration.x = e.rigidbody.acceleration.x - PLAYER.GROUND_ACCELERATION
                         end
@@ -1173,7 +1177,6 @@ function Game:update()
                             e.rigidbody.acceleration.x = e.rigidbody.acceleration.x + PLAYER.GROUND_ACCELERATION
                         end
 
-                    end
                 end
             else
                 e.shake.timer:tick()
