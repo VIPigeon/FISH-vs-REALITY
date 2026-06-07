@@ -61,6 +61,7 @@ function Game:createDefaultPlayer()
 
                 x_i = 1,
                 x_bucket = PLAYER.JUMP.X_BUCKET,
+                counter = 1,
             },
             stunnedTimer = Timer:new(JELLY.STUN_TIME),
             stunClickTimer = Timer:new(0.1),
@@ -1127,22 +1128,30 @@ function Game:update()
                         if e.player.jump.t == 0 then
                             -- прыжок
                             -- Y
-                            local P
-                            local O2 = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
-                            local GASLIGHT_ON = true  -- для дебага
-                            if GASLIGHT_ON and e.position.x > e.player.max_x_achieved then
-                                P = 0.52 * O2
-                                if O2 > 0.9 then
-                                    P = 0.9
-                                end
-                            else
-                                P = O2
-                            end
-                            local ball = math.random()
+                            -- local P
+                            -- local O2 = (PLAYER.OXYGEN - e.player.oxygen) / PLAYER.OXYGEN
+                            -- local GASLIGHT_ON = true  -- для дебага
+                            -- if GASLIGHT_ON and e.position.x > e.player.max_x_achieved then
+                            --     P = 0.52 * O2
+                            --     if O2 > 0.9 then
+                            --         P = 0.9
+                            --     end
+                            -- else
+                            --     P = O2
+                            -- end
+                            -- local ball = math.random()
+                            -- local jump_type = 'short'
+                            -- if ball < P then
+                            --     jump_type = 'high'
+                            -- end
+
                             local jump_type = 'short'
-                            if ball < P then
+                            local MOD = 5
+                            if e.player.jump.counter == MOD then
                                 jump_type = 'high'
                             end
+                            e.player.jump.counter = e.player.jump.counter % MOD + 1
+
                             -- local jump_type = e.player.jump.bucket[e.player.jump.i]
                             e.rigidbody.velocity.y = PLAYER.JUMP[jump_type].F
                             e.player.jump.t = PLAYER.JUMP[jump_type].T
